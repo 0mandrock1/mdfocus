@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uk" data-accent="lime">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mdfocus — читалка з токенами концентрації</title>
+<link rel="stylesheet" href="https://files.mandrock.me/web/mandrock0-tokens.css">
+<link rel="stylesheet" href="https://tools.mandrock.me/palettes/accents.css">
+<script src="https://files.mandrock.me/web/mandrock0-ambient.js" data-profile="full" data-section="lime" data-seed="481027395" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+<style>
+  :root{
+    --bg:var(--background); --text:var(--foreground); --sub:var(--muted-foreground); --accent:var(--page-accent);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:24px;
+  }
+  .wrap{max-width:680px; margin:0 auto;}
+  h1.title{font-size:1.3rem; font-weight:700; margin:0 0 6px;}
+  p.sub{color:var(--sub); margin:0 0 24px; font-size:.85rem;}
+
+  /* --- top progress rail (section pacing) --- */
+  #progress-rail{
+    position:fixed; top:0; left:0; right:0; height:3px; z-index:50;
+    background:var(--secondary);
+  }
+  #progress-fill{
+    height:100%; width:0%; background:var(--accent);
+    transition:width .25s ease;
+  }
+
+  /* --- source panel --- */
+  .panel{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:16px 18px; margin-bottom:20px;
+  }
+  .panel h2{font-size:.8rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); margin:0 0 12px;}
+  .src-tabs{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
+  .src-tab{
+    font-family:inherit; font-size:.8rem; color:var(--sub); background:var(--secondary);
+    border:1px solid var(--border); border-radius:8px; padding:.4em .9em; cursor:pointer;
+  }
+  .src-tab.active{color:var(--text); border-color:var(--accent);}
+  .src-pane{display:none;}
+  .src-pane.active{display:block;}
+  textarea#paste-area{
+    width:100%; min-height:140px; resize:vertical; background:var(--muted);
+    border:1px solid var(--border); border-radius:8px; color:var(--text);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.85rem; padding:10px 12px;
+  }
+  .row{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  input[type="text"], input[type="url"]{
+    flex:1; min-width:200px; background:var(--muted); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-family:inherit; font-size:.85rem; padding:8px 12px;
+  }
+  button.btn{
+    font-family:inherit; font-size:.82rem; color:var(--accent); background:transparent;
+    border:1px solid var(--border); border-radius:8px; padding:.5em 1.1em; cursor:pointer;
+  }
+  button.btn:hover{border-color:var(--accent);}
+  input[type="file"]{color:var(--sub); font-size:.85rem;}
+  .status-line{font-size:.78rem; color:var(--sub); margin-top:8px; min-height:1.1em;}
+  .status-line.error{color:var(--accent-purple, #f66);}
+
+  /* --- article --- */
+  article#article{display:none;}
+  article#article.visible{display:block;}
+  article#article h1, article#article h2, article#article h3{font-weight:700; line-height:1.3;}
+  article#article p{line-height:1.65; font-size:1rem;}
+  article#article pre{
+    background:var(--muted); border:1px solid var(--border); border-radius:8px;
+    padding:12px 14px; overflow-x:auto; font-size:.85rem;
+  }
+  article#article code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  article#article blockquote{
+    margin:0; padding:2px 16px; border-left:3px solid var(--accent); color:var(--sub);
+  }
+  article#article a{color:var(--accent);}
+
+  .mdfocus-sep{margin:2em 0 1.4em;}
+  .mdfocus-sep hr{border:none; border-top:1px solid var(--border); margin:0;}
+
+  .reset-row{margin-top:24px; text-align:center;}
+  footer{margin-top:28px; text-align:center; color:var(--muted-foreground); font-size:.72rem;}
+
+  /* --- passive attention tokens --- */
+
+  /* section counter: fixed, low-contrast, out of the reading flow */
+  #section-counter{
+    position:fixed; top:10px; right:14px; z-index:50;
+    font-size:.68rem; color:var(--sub); letter-spacing:.04em;
+    font-variant-numeric:tabular-nums; opacity:.6; pointer-events:none;
+    display:none;
+  }
+  #section-counter.visible{display:block;}
+
+  /* line focus: nearest block to the reading line gets an accent highlight
+     (left bar + background tint). No dimming of the rest — full contrast
+     everywhere, the accent is the only signal. Highlight color rotates per
+     document section (set via --focus-accent on #article, see app.js). */
+  article#article.line-focus-on .mdfocus-focusable.line-active{
+    box-shadow: inset 3px 0 0 0 var(--focus-accent, var(--accent-lime));
+    background: color-mix(in oklch, var(--focus-accent, var(--accent-lime)) 14%, transparent);
+    padding-left:12px; border-radius:4px;
+    transition:box-shadow .2s ease, background-color .2s ease;
+  }
+  @media (prefers-reduced-motion: reduce){
+    article#article.line-focus-on .mdfocus-focusable.line-active{transition:none;}
+  }
+
+  /* controls panel: compact, fixed, low contrast, mobile-safe (~400px) */
+  #token-controls{
+    position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+    z-index:50; width:min(360px, calc(100vw - 24px));
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:8px 12px; font-size:.72rem; color:var(--sub);
+    display:none; gap:6px; flex-direction:column;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);
+  }
+  #token-controls.visible{display:flex;}
+  #token-controls .tc-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  #token-controls label{display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;}
+  #token-controls select{
+    font-family:inherit; font-size:.7rem; color:var(--text); background:var(--muted);
+    border:1px solid var(--border); border-radius:6px; padding:2px 6px;
+  }
+  #token-controls input[type="range"]{flex:1; min-width:60px;}
+  #token-controls .tc-label{color:var(--sub); min-width:60px;}
+</style>
+<!-- og:start (managed by og-preview skill) -->
+<meta name="description" content="mdfocus — читалка з токенами концентрації on mandrock tools.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mandrock tools">
+<meta property="og:title" content="mdfocus — читалка з токенами концентрації">
+<meta property="og:description" content="mdfocus — читалка з токенами концентрації on mandrock tools.">
+<meta property="og:url" content="https://mandrock-tools.duckdns.org/mdfocus/">
+<meta property="og:image" content="https://mandrock-tools.duckdns.org/mdfocus/og.png?v=19b6aa80">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="mdfocus — читалка з токенами концентрації — mandrock tools">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="mdfocus — читалка з токенами концентрації">
+<meta name="twitter:description" content="mdfocus — читалка з токенами концентрації on mandrock tools.">
+<meta name="twitter:image" content="https://mandrock-tools.duckdns.org/mdfocus/og.png?v=19b6aa80">
+<!-- og:end -->
+</head>
+<body>
+<div id="progress-rail"><div id="progress-fill"></div></div>
+<div id="section-counter"></div>
+<div id="token-controls">
+  <div class="tc-row">
+    <label><input type="checkbox" id="tc-line-focus" checked> лінія фокусу</label>
+  </div>
+  <div class="tc-row">
+    <label><input type="checkbox" id="tc-noise-on"> шум</label>
+    <select id="tc-noise-type">
+      <option value="brown">brown</option>
+      <option value="pink">pink</option>
+    </select>
+    <span class="tc-label">гучність</span>
+    <input type="range" id="tc-noise-volume" min="0" max="1" step="0.01" value="0.3">
+  </div>
+</div>
+<div class="wrap">
+  <h1 class="title">mdfocus</h1>
+  <p class="sub">рідер сирого markdown — токени концентрації уваги, не LLM-токени</p>
+
+  <div class="panel" id="source-panel">
+    <h2>Джерело</h2>
+    <div class="src-tabs">
+      <button type="button" class="src-tab active" data-pane="pane-paste">Paste</button>
+      <button type="button" class="src-tab" data-pane="pane-upload">Upload</button>
+      <button type="button" class="src-tab" data-pane="pane-url">URL</button>
+    </div>
+    <div class="src-pane active" id="pane-paste">
+      <textarea id="paste-area" placeholder="встав сирий markdown сюди…"></textarea>
+      <div class="row"><button type="button" class="btn" id="paste-load-btn">Читати</button></div>
+    </div>
+    <div class="src-pane" id="pane-upload">
+      <input type="file" id="file-input" accept=".md,.markdown,.txt,text/markdown,text/plain">
+    </div>
+    <div class="src-pane" id="pane-url">
+      <div class="row">
+        <input type="url" id="url-input" placeholder="https://example.com/README.md">
+        <button type="button" class="btn" id="url-load-btn">Завантажити</button>
+      </div>
+    </div>
+    <div class="status-line" id="status-line"></div>
+  </div>
+
+  <article id="article"></article>
+
+  <div class="reset-row" id="reset-row" style="display:none;">
+    <button type="button" class="btn" id="reset-btn">← нове джерело</button>
+  </div>
+
+  <footer>mdfocus · нотатки зберігаються локально в браузері</footer>
+</div>
+<script src="app.js" defer></script>
+</body>
+</html>
