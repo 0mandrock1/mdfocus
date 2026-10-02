@@ -1,7 +1,7 @@
 # mdfocus
 
 A client-side raw-markdown reader with a "focus token" technique for attention
-(section-by-section dwell timer + progress rail), paired with a minimal
+(section pacing + progress rail, line-focus window, optional brown/pink noise), paired with a minimal
 server-side fetch proxy so the browser can pull `.md`/text content from
 external URLs that don't send CORS headers.
 
@@ -13,9 +13,9 @@ tokens, and not auth tokens.
 ```
 web/index.html   static page (reader UI, token/dwell logic markup)
 web/app.js       client logic: paste/upload/URL input, markdown render via
-                 marked.js, h1/h2 section splitting, dwell timer + progress
-                 rail, per-section reflections stored in localStorage only
-                 (nothing from reflections is sent to the server)
+                 marked.js, h1/h2 section splitting, dwell/progress pacing,
+                 line-focus window, noise; token prefs live in localStorage
+                 only (nothing is sent to the server)
 web/og.png       Open Graph preview image
 api/app.py       fetch proxy backend (stdlib http.server, no dependencies)
 deploy.sh        idempotent deploy script, see below
@@ -78,7 +78,7 @@ Deploy targets (not part of this repo, see production paths below):
 
 ## Production reference (nginx + systemd)
 
-Served at `https://tools.mandrock.me/mdfocus/`. From the live nginx config
+Served at `https://tools.mandrock.me/mdfocus/` (public, no auth). Deep link: `/mdfocus/?url=<public .md url>`. From the live nginx config
 (`nginx -T`), the relevant locations are:
 
 ```nginx
@@ -97,14 +97,7 @@ location /mdfocus/api/ {
 }
 ```
 
-Note: as of this snapshot the live `/mdfocus/` location has no
-`auth_basic` directive, even though the host's infra notes mention one for
-this app elsewhere — that's a documentation/reality drift on the server
-side, not something this repo controls. Check the live config before
-relying on it.
-
-systemd unit (`systemctl cat mdfocus-api`), secrets/Environment= stripped
-(there were none to strip — the live unit has no `Environment=` lines):
+systemd unit (`systemctl cat mdfocus-api`), no `Environment=` lines:
 
 ```ini
 [Unit]
