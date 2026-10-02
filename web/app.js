@@ -110,6 +110,7 @@
     var docId = hashText(raw);
     var html = marked.parse(raw);
     article.innerHTML = html;
+    wrapTables(article);
     article.classList.add('visible');
     sourcePanel.style.display = 'none';
     resetRow.style.display = '';
@@ -122,6 +123,22 @@
     window.scrollTo(0, 0);
     setupSkimAmbient();
     setupBookmark(docId);
+  }
+
+  // mdfocus:tables — wrap every rendered <table> in a scrollable container so
+  // a wide table scrolls within itself instead of stretching the page. Runs
+  // right after innerHTML is set, before buildSections() groups top-level
+  // children, so the wrapper <div> (not the <table>) becomes the section
+  // child — it never matches LINE_FOCUS_SELECTOR and is not picked up as a
+  // focusable block.
+  function wrapTables(container) {
+    var tables = Array.prototype.slice.call(container.querySelectorAll('table'));
+    tables.forEach(function (table) {
+      var wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
   }
 
   // ---------------------------------------------------------------- sections

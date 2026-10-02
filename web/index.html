@@ -79,6 +79,31 @@
     margin:0; padding:2px 16px; border-left:3px solid var(--accent); color:var(--sub);
   }
   article#article a{color:var(--accent);}
+
+  /* mdfocus:tables */
+  article#article .table-wrap{
+    overflow-x:auto; margin:1.2em 0; border:1px solid var(--border); border-radius:8px;
+    -webkit-overflow-scrolling:touch;
+  }
+  article#article table{
+    width:100%; border-collapse:collapse; font-size:.9rem; font-variant-numeric:tabular-nums;
+  }
+  article#article thead th{
+    background:var(--secondary); color:var(--text); font-weight:700;
+    text-align:left; padding:.55em .8em; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  article#article tbody td{
+    padding:.5em .8em; border-top:1px solid var(--border);
+    vertical-align:top; word-break:break-word;
+  }
+  article#article tbody tr:nth-child(even){background:color-mix(in oklch, var(--secondary) 35%, transparent);}
+  article#article table th[align="center"], article#article table td[align="center"]{text-align:center;}
+  article#article table th[align="right"], article#article table td[align="right"]{text-align:right;}
+  article#article table code{
+    font-size:.85em; background:var(--muted); border-radius:4px; padding:.1em .35em;
+    white-space:normal; word-break:break-word;
+  }
   article#article.bionic-reading-on .bionic-prefix{font-weight:700;}
   article#article.reading-lane{max-width:58ch; margin-inline:auto;}
   canvas[data-mandrock0-ambient]{
