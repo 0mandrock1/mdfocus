@@ -1,10 +1,18 @@
-/* Fixed reading guide, three lines slightly below viewport centre. */
-.reading-focus-band{
-  position:fixed; top:56vh; z-index:70; pointer-events:none; display:none;
-  border-left:3px solid var(--focus-accent,var(--rd-accent,currentColor));
-  border-top:1px solid var(--focus-accent,var(--rd-accent,currentColor));
-  border-bottom:1px solid var(--focus-accent,var(--rd-accent,currentColor));
-  background:color-mix(in oklch,var(--focus-accent,var(--rd-accent,currentColor)) 10%,transparent);
+/* Paragraph accent clipped to six text lines from viewport centre down. */
+.line-active{
+  position:relative; padding-left:10px; border-radius:4px;
+  background-image:linear-gradient(
+    color-mix(in oklch,var(--focus-accent,var(--rd-accent,currentColor)) 24%,transparent),
+    color-mix(in oklch,var(--focus-accent,var(--rd-accent,currentColor)) 24%,transparent)
+  );
+  background-size:100% var(--focus-height);
+  background-position:0 var(--focus-top);
+  background-repeat:no-repeat;
 }
-.reading-focus-band.visible{display:block;}
-@media print{.reading-focus-band{display:none!important;}}
+.line-active::before{
+  content:""; position:absolute; left:0; top:var(--focus-top);
+  width:4px; height:var(--focus-height);
+  background:var(--focus-accent,var(--rd-accent,currentColor));
+  pointer-events:none;
+}
+@media print{.line-active{background:none;padding-left:0}.line-active::before{display:none}}

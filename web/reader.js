@@ -1,5 +1,5 @@
 /* mdfocus reader module — reusable core of the mdfocus "focus tokens" (section pacing + progress
- * rail, three-line reading guide, optional brown/pink/white/violet noise). No dependencies, no network, no
+ * rail, six-line focus window, optional brown/pink/white/violet noise). No dependencies, no network, no
  * telemetry. Used by mdfocus itself and (vendored) by Atlas.
  *
  * MdfocusReader.init(root, options) -> instance { destroy(), refresh(), setLineFocus(on),
@@ -67,13 +67,9 @@
     var railMode = o.railMode || 'position';
     var counterText = o.counterText || function (i, t) { return 'секція ' + i + ' / ' + t; };
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var destroyed = false, listeners = [], sections = [], blocks = [];
+    var destroyed = false, listeners = [], sections = [], blocks = [], active = [];
     var lastIdx = null, lineOn = false;
     var noise = { ctx: null, src: null, gain: null, on: false };
-    var band = document.createElement('div');
-    band.className = 'reading-focus-band';
-    band.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(band);
 
     function on(target, ev, fn, opts) { target.addEventListener(ev, fn, opts); listeners.push([target, ev, fn, opts]); }
 
@@ -140,20 +136,45 @@
       var seed = parseInt(sc.getAttribute('data-seed'), 10); if (isNaN(seed)) return;
       try { window.mandrock0Ambient.reseed((seed + idx) >>> 0); } catch (e) { /* ignore */ }
     }
-    function accent(idx) {
-      band.style.setProperty('--focus-accent', 'var(--accent-' + PALETTE[(idx - 1) % PALETTE.length] + ', var(--rd-accent, currentColor))');
+    function accent() {
+      var step = Math.floor(((window.pageYOffset || document.documentElement.scrollTop || 0) + window.innerHeight * 0.5) / (window.innerHeight * 0.8));
+      rootEl.style.setProperty('--focus-accent', 'var(--accent-' + PALETTE[step % PALETTE.length] + ', var(--rd-accent, currentColor))');
     }
 
-    // ---- fixed guide spanning three rendered lines
+    // ---- paragraph accent clipped to six lines from viewport centre down
+    function clearFocus() {
+      active.forEach(function (block) {
+        block.classList.remove('line-active');
+        block.style.removeProperty('--focus-top');
+        block.style.removeProperty('--focus-height');
+      });
+      active = [];
+    }
     function applyFocus() {
-      var rect = rootEl.getBoundingClientRect();
-      var top = window.innerHeight * 0.56;
+      if (!lineOn) { clearFocus(); return; }
+      accent();
       var sample = rootEl.querySelector('p') || rootEl;
       var lineHeight = parseFloat(getComputedStyle(sample).lineHeight) || 27;
-      band.style.left = Math.max(0, rect.left) + 'px';
-      band.style.width = Math.min(window.innerWidth - Math.max(0, rect.left), rect.width) + 'px';
-      band.style.height = lineHeight * 3 + 'px';
-      band.classList.toggle('visible', lineOn && rect.top <= top && rect.bottom >= top + lineHeight * 3);
+      var top = window.innerHeight * 0.5;
+      var bottom = top + lineHeight * 6;
+      var next = [];
+      blocks.forEach(function (block) {
+        var rect = block.getBoundingClientRect();
+        var start = Math.max(rect.top, top);
+        var end = Math.min(rect.bottom, bottom);
+        if (end <= start) return;
+        block.style.setProperty('--focus-top', (start - rect.top) + 'px');
+        block.style.setProperty('--focus-height', (end - start) + 'px');
+        block.classList.add('line-active');
+        next.push(block);
+      });
+      active.forEach(function (block) {
+        if (next.indexOf(block) !== -1) return;
+        block.classList.remove('line-active');
+        block.style.removeProperty('--focus-top');
+        block.style.removeProperty('--focus-height');
+      });
+      active = next;
     }
     function setLineFocus(onNow) {
       lineOn = !!onNow;
@@ -196,7 +217,8 @@
       });
     }
     function refresh() {
-      blocks = Array.prototype.slice.call(rootEl.querySelectorAll(focusSel)).filter(function (b) { return !b.closest('table, [data-reader-skip]'); });
+      clearFocus();
+      blocks = Array.prototype.slice.call(rootEl.querySelectorAll(focusSel)).filter(function (b) { return !b.closest('table, [data-reader-skip]') && !b.querySelector(focusSel); });
       onScroll();
     }
 
@@ -240,12 +262,12 @@
       if (destroyed) return; destroyed = true;
       listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
       stopNoise(true);
-      band.remove();
+      clearFocus();
       if (ui.fill) ui.fill.style.width = '0%';
       if (o.sections !== 'existing') {
         sections.forEach(function (s) { while (s.firstChild) s.parentNode.insertBefore(s.firstChild, s); s.parentNode.removeChild(s); });
       }
-      sections = []; blocks = [];
+      sections = []; blocks = []; active = [];
     }
     return { destroy: destroy, refresh: refresh, setLineFocus: setLineFocus, startNoise: startNoise, stopNoise: stopNoise, setNoiseOptions: setNoiseOptions,
              resetPrefs: resetPrefs, state: function () { return { section: lastIdx, total: sections.length, lineFocus: lineOn, noise: noise.on, reducedMotion: reduceMotion, prefs: prefs }; } };
