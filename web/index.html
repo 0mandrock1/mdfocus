@@ -95,14 +95,27 @@
   }
   article#article tbody td{
     padding:.5em .8em; border-top:1px solid var(--border);
-    vertical-align:top; word-break:break-word;
+    vertical-align:top; word-break:normal; overflow-wrap:normal;
   }
   article#article tbody tr:nth-child(even){background:color-mix(in oklch, var(--secondary) 35%, transparent);}
+  /* scroll affordance: edge fade appears only on the side that has more content */
+  article#article .table-wrap.can-scroll-r{
+    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);
+            mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);
+  }
+  article#article .table-wrap.can-scroll-l{
+    -webkit-mask-image:linear-gradient(to left,#000 calc(100% - 32px),transparent);
+            mask-image:linear-gradient(to left,#000 calc(100% - 32px),transparent);
+  }
+  article#article .table-wrap.can-scroll-l.can-scroll-r{
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px),transparent);
+            mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px),transparent);
+  }
   article#article table th[align="center"], article#article table td[align="center"]{text-align:center;}
   article#article table th[align="right"], article#article table td[align="right"]{text-align:right;}
   article#article table code{
     font-size:.85em; background:var(--muted); border-radius:4px; padding:.1em .35em;
-    white-space:normal; word-break:break-word;
+    white-space:normal; word-break:normal; overflow-wrap:normal;
   }
   article#article.bionic-reading-on .bionic-prefix{font-weight:700;}
   article#article.reading-lane{max-width:58ch; margin-inline:auto;}

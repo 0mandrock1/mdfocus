@@ -138,6 +138,15 @@
       wrap.className = 'table-wrap';
       table.parentNode.insertBefore(wrap, table);
       wrap.appendChild(table);
+      function upd() {
+        var max = wrap.scrollWidth - wrap.clientWidth;
+        wrap.classList.toggle('can-scroll-r', max > 1 && wrap.scrollLeft < max - 1);
+        wrap.classList.toggle('can-scroll-l', wrap.scrollLeft > 1);
+      }
+      wrap.addEventListener('scroll', upd, { passive: true });
+      window.addEventListener('resize', upd);
+      upd();
+      if (window.requestAnimationFrame) requestAnimationFrame(upd);
     });
   }
 
