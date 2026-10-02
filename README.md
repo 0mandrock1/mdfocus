@@ -1,8 +1,8 @@
 # mdfocus
 
 A client-side raw-markdown reader with a "focus token" technique for attention
-(section pacing + progress rail, line-focus window, bionic reading, scroll-responsive ambient, a narrow reading
-lane, a resume position, and optional brown/pink noise), paired with a minimal
+(section pacing + progress rail, three-line focus guide, bionic reading, scroll-responsive ambient, narrow and full-width
+reading modes, a resume position, and optional brown/pink/white/violet noise), paired with a minimal
 server-side fetch proxy so the browser can pull `.md`/text content from
 external URLs that don't send CORS headers.
 
@@ -15,9 +15,11 @@ tokens, and not auth tokens.
 web/index.html   static page (reader UI, token/dwell logic markup)
 web/app.js       client logic: paste/upload/URL input, markdown render via
                  marked.js, h1/h2 section splitting, dwell/progress pacing,
-                 line-focus window, bionic reading, skim-responsive ambient,
-                 narrow lane, local resume position, noise; prefs live in localStorage
+                 three-line focus guide, bionic reading, skim-responsive ambient,
+                 narrow/full-width modes, local resume position, noise; prefs live in localStorage
                  only (nothing is sent to the server)
+web/reader.js    reusable reader module for integrations
+web/reader.css   reusable focus guide styles
 web/og.png       Open Graph preview image
 api/app.py       fetch proxy backend (stdlib http.server, no dependencies)
 deploy.sh        idempotent deploy script, see below
@@ -123,13 +125,17 @@ WantedBy=multi-user.target
 
 ## Focus controls
 
-- **Bionic reading** bolds the first part of words in prose and list text. Code,
+- **Bionic reading** bolds and italicizes the first part of words in prose and list text. Code,
   headings, and links retain their original markup. It is off by default.
 - **Skim-responsive ambient** fades the shared ambient canvases as scroll speed
   rises, then restores them after scrolling settles. It is disabled when the
   browser requests reduced motion.
-- **Narrow reading lane** limits the article to 58 characters in width. It is
-  off by default.
+- **Reading width** offers a narrow 58-character lane or a full-width page.
+  Both are off by default.
+- **Focus guide** highlights three rendered lines starting just below the
+  viewport centre; it follows scrolling without selecting whole paragraphs.
+- **Noise** offers brown, pink, white, and violet types. The volume slider
+  uses a finer step and a squared gain curve for quieter low settings.
 - **Continue reading** appears when a local position exists for the same
   Markdown text. It restores that scroll position only when clicked.
 - Reader switches and positions are stored in browser localStorage. Audio never

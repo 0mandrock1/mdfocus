@@ -1,0 +1,10 @@
+/* Fixed reading guide, three lines slightly below viewport centre. */
+.reading-focus-band{
+  position:fixed; top:56vh; z-index:70; pointer-events:none; display:none;
+  border-left:3px solid var(--focus-accent,var(--rd-accent,currentColor));
+  border-top:1px solid var(--focus-accent,var(--rd-accent,currentColor));
+  border-bottom:1px solid var(--focus-accent,var(--rd-accent,currentColor));
+  background:color-mix(in oklch,var(--focus-accent,var(--rd-accent,currentColor)) 10%,transparent);
+}
+.reading-focus-band.visible{display:block;}
+@media print{.reading-focus-band{display:none!important;}}
