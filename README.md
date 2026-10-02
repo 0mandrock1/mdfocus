@@ -1,7 +1,7 @@
 # mdfocus
 
 A client-side raw-markdown reader with a "focus token" technique for attention
-(section pacing + progress rail, three-line focus guide, bionic reading, scroll-responsive ambient, narrow and full-width
+(section pacing + progress rail, six-line focus window, bionic reading, scroll-responsive ambient, narrow and full-width
 reading modes, a resume position, and optional brown/pink/white/violet noise), paired with a minimal
 server-side fetch proxy so the browser can pull `.md`/text content from
 external URLs that don't send CORS headers.
@@ -15,7 +15,7 @@ tokens, and not auth tokens.
 web/index.html   static page (reader UI, token/dwell logic markup)
 web/app.js       client logic: paste/upload/URL input, markdown render via
                  marked.js, h1/h2 section splitting, dwell/progress pacing,
-                 three-line focus guide, bionic reading, skim-responsive ambient,
+                 six-line focus window, bionic reading, skim-responsive ambient,
                  narrow/full-width modes, local resume position, noise; prefs live in localStorage
                  only (nothing is sent to the server)
 web/reader.js    reusable reader module for integrations
@@ -132,8 +132,8 @@ WantedBy=multi-user.target
   browser requests reduced motion.
 - **Reading width** offers a narrow 58-character lane or a full-width page.
   Both are off by default.
-- **Focus guide** highlights three rendered lines starting just below the
-  viewport centre; it follows scrolling without selecting whole paragraphs.
+- **Focus guide** highlights at most six rendered lines from the viewport centre downward
+  with the paragraph accent. The stronger accent rotates every 0.8 viewport.
 - **Noise** offers brown, pink, white, and violet types. The volume slider
   uses a finer step and a squared gain curve for quieter low settings.
 - **Continue reading** appears when a local position exists for the same

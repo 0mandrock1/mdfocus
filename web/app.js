@@ -267,34 +267,51 @@
     progressFill.style.width = '0%';
   }
 
-  // A three-line reading guide follows the viewport, not paragraph boundaries.
+  // Keep the original paragraph accent, clipped to six lines below viewport centre.
   var lineFocusState = null;
   var LINE_FOCUS_SELECTOR = 'p, li, blockquote, pre, h1, h2, h3, h4, h5, h6';
   var LINE_FOCUS_PALETTE = ['lime', 'cyan', 'purple', 'crimson'];
 
-  function setLineFocusAccent(sectionIdx) {
-    var name = LINE_FOCUS_PALETTE[(sectionIdx - 1) % LINE_FOCUS_PALETTE.length];
-    if (lineFocusState) lineFocusState.band.style.setProperty('--focus-accent', 'var(--accent-' + name + ')');
+  function setLineFocusAccent() {
+    var step = Math.floor((window.scrollY + window.innerHeight * 0.5) / (window.innerHeight * 0.8));
+    var name = LINE_FOCUS_PALETTE[step % LINE_FOCUS_PALETTE.length];
+    article.style.setProperty('--focus-accent', 'var(--accent-' + name + ')');
   }
 
   function setupLineFocus(container) {
     teardownLineFocus();
-    var blocks = Array.prototype.slice.call(container.querySelectorAll(LINE_FOCUS_SELECTOR));
-    var band = document.createElement('div');
-    band.className = 'reading-focus-band';
-    band.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(band);
-    var state = { blocks: blocks, band: band, onScroll: null, onResize: null, enabled: true };
+    var blocks = Array.prototype.slice.call(container.querySelectorAll(LINE_FOCUS_SELECTOR)).filter(function (block) {
+      return !block.querySelector(LINE_FOCUS_SELECTOR);
+    });
+    var state = { blocks: blocks, activeSet: [], onScroll: null, onResize: null, enabled: true };
     lineFocusState = state;
 
     function apply() {
-      var rect = container.getBoundingClientRect();
-      var top = window.innerHeight * 0.56;
-      var lineHeight = parseFloat(getComputedStyle(container.querySelector('p') || container).lineHeight) || 27;
-      band.style.left = Math.max(0, rect.left) + 'px';
-      band.style.width = Math.min(window.innerWidth - Math.max(0, rect.left), rect.width) + 'px';
-      band.style.height = lineHeight * 3 + 'px';
-      band.classList.toggle('visible', state.enabled && rect.top <= top && rect.bottom >= top + lineHeight * 3);
+      var sample = container.querySelector('p') || container;
+      var lineHeight = parseFloat(getComputedStyle(sample).lineHeight) || 27;
+      var top = window.innerHeight * 0.5;
+      var bottom = top + lineHeight * 6;
+      var next = [];
+      if (state.enabled) {
+        setLineFocusAccent();
+        blocks.forEach(function (block) {
+          var rect = block.getBoundingClientRect();
+          var start = Math.max(rect.top, top);
+          var end = Math.min(rect.bottom, bottom);
+          if (end <= start) return;
+          block.style.setProperty('--focus-top', (start - rect.top) + 'px');
+          block.style.setProperty('--focus-height', (end - start) + 'px');
+          block.classList.add('line-active');
+          next.push(block);
+        });
+      }
+      state.activeSet.forEach(function (block) {
+        if (next.indexOf(block) !== -1) return;
+        block.classList.remove('line-active');
+        block.style.removeProperty('--focus-top');
+        block.style.removeProperty('--focus-height');
+      });
+      state.activeSet = next;
     }
     var ticking = false;
     function onScroll() {
@@ -313,15 +330,18 @@
   function setLineFocusEnabled(on) {
     if (!lineFocusState) return;
     lineFocusState.enabled = on;
-    lineFocusState.band.classList.toggle('visible', false);
-    if (on) lineFocusState.onScroll();
+    lineFocusState.onScroll();
   }
 
   function teardownLineFocus() {
     if (!lineFocusState) return;
     window.removeEventListener('scroll', lineFocusState.onScroll);
     window.removeEventListener('resize', lineFocusState.onResize);
-    lineFocusState.band.remove();
+    lineFocusState.activeSet.forEach(function (block) {
+      block.classList.remove('line-active');
+      block.style.removeProperty('--focus-top');
+      block.style.removeProperty('--focus-height');
+    });
     lineFocusState = null;
   }
 
