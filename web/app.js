@@ -96,6 +96,7 @@
     teardownSkimAmbient();
     teardownBionic();
     article.classList.remove('reading-lane');
+    document.body.classList.remove('reading-wide');
     stopNoise(true);
     document.getElementById('tc-noise-on').checked = false;
     window.scrollTo(0, 0);
@@ -266,99 +267,61 @@
     progressFill.style.width = '0%';
   }
 
-  // ---------------------------------------------------------------- token: line focus
-  // Passive attention token — no input required. A WINDOW of blocks around
-  // the reading line (~38% of viewport height) gets an accent highlight
-  // (left bar + background tint, see .line-active in index.html); nothing
-  // is dimmed — full contrast everywhere. Window = LINE_FOCUS_WINDOW_RADIUS
-  // blocks on each side of the closest block (radius 2 => 5 blocks total).
-  // The highlight color rotates per document section (not per block, not
-  // on a timer) by writing --focus-accent on #article, read from the same
-  // system accent tokens as tools.mandrock.me/palettes (accents.css).
-  // Position updates via a rAF-throttled scroll listener (not on every raw
-  // scroll event).
+  // A three-line reading guide follows the viewport, not paragraph boundaries.
   var lineFocusState = null;
   var LINE_FOCUS_SELECTOR = 'p, li, blockquote, pre, h1, h2, h3, h4, h5, h6';
   var LINE_FOCUS_PALETTE = ['lime', 'cyan', 'purple', 'crimson'];
-  var LINE_FOCUS_WINDOW_RADIUS = 2; // blocks each side of center; total = 2*R+1
 
   function setLineFocusAccent(sectionIdx) {
     var name = LINE_FOCUS_PALETTE[(sectionIdx - 1) % LINE_FOCUS_PALETTE.length];
-    article.style.setProperty('--focus-accent', 'var(--accent-' + name + ')');
+    if (lineFocusState) lineFocusState.band.style.setProperty('--focus-accent', 'var(--accent-' + name + ')');
   }
 
   function setupLineFocus(container) {
     teardownLineFocus();
-
     var blocks = Array.prototype.slice.call(container.querySelectorAll(LINE_FOCUS_SELECTOR));
-    if (!blocks.length) return;
-    blocks.forEach(function (b) { b.classList.add('mdfocus-focusable'); });
-
-    var state = { blocks: blocks, activeSet: [], onScroll: null, onResize: null, enabled: true };
+    var band = document.createElement('div');
+    band.className = 'reading-focus-band';
+    band.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(band);
+    var state = { blocks: blocks, band: band, onScroll: null, onResize: null, enabled: true };
     lineFocusState = state;
 
-    function findClosestIndex() {
-      var line = window.innerHeight * 0.38;
-      var bestIdx = -1;
-      var bestDist = Infinity;
-      for (var i = 0; i < blocks.length; i++) {
-        var rect = blocks[i].getBoundingClientRect();
-        if (rect.height === 0) continue;
-        var mid = rect.top + rect.height / 2;
-        var dist = Math.abs(mid - line);
-        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
-      }
-      return bestIdx;
-    }
-
     function apply() {
-      if (!state.enabled) return;
-      var centerIdx = findClosestIndex();
-      var next = [];
-      if (centerIdx !== -1) {
-        var lo = Math.max(0, centerIdx - LINE_FOCUS_WINDOW_RADIUS);
-        var hi = Math.min(blocks.length - 1, centerIdx + LINE_FOCUS_WINDOW_RADIUS);
-        for (var i = lo; i <= hi; i++) next.push(blocks[i]);
-      }
-      var same = next.length === state.activeSet.length &&
-        next.every(function (b, i) { return b === state.activeSet[i]; });
-      if (same) return;
-      state.activeSet.forEach(function (b) { b.classList.remove('line-active'); });
-      next.forEach(function (b) { b.classList.add('line-active'); });
-      state.activeSet = next;
+      var rect = container.getBoundingClientRect();
+      var top = window.innerHeight * 0.56;
+      var lineHeight = parseFloat(getComputedStyle(container.querySelector('p') || container).lineHeight) || 27;
+      band.style.left = Math.max(0, rect.left) + 'px';
+      band.style.width = Math.min(window.innerWidth - Math.max(0, rect.left), rect.width) + 'px';
+      band.style.height = lineHeight * 3 + 'px';
+      band.classList.toggle('visible', state.enabled && rect.top <= top && rect.bottom >= top + lineHeight * 3);
     }
-
     var ticking = false;
     function onScroll() {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(function () { ticking = false; apply(); });
     }
-
     state.onScroll = onScroll;
     state.onResize = onScroll;
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
-
     setLineFocusEnabled(loadTokenPrefs().lineFocus !== false);
     apply();
   }
 
   function setLineFocusEnabled(on) {
-    if (!lineFocusState) { article.classList.toggle('line-focus-on', false); return; }
+    if (!lineFocusState) return;
     lineFocusState.enabled = on;
-    article.classList.toggle('line-focus-on', on);
-    if (!on && lineFocusState.activeSet.length) {
-      lineFocusState.activeSet.forEach(function (b) { b.classList.remove('line-active'); });
-      lineFocusState.activeSet = [];
-    }
+    lineFocusState.band.classList.toggle('visible', false);
+    if (on) lineFocusState.onScroll();
   }
 
   function teardownLineFocus() {
-    article.classList.remove('line-focus-on');
     if (!lineFocusState) return;
     window.removeEventListener('scroll', lineFocusState.onScroll);
     window.removeEventListener('resize', lineFocusState.onResize);
+    lineFocusState.band.remove();
     lineFocusState = null;
   }
 
@@ -542,7 +505,14 @@
     var buffer = ctx.createBuffer(1, frameCount, ctx.sampleRate);
     var data = buffer.getChannelData(0);
 
-    if (type === 'pink') {
+    if (type === 'white' || type === 'violet') {
+      var previous = 0;
+      for (var z = 0; z < frameCount; z++) {
+        var sample = Math.random() * 2 - 1;
+        data[z] = type === 'violet' ? (sample - previous) * 0.35 : sample * 0.5;
+        previous = sample;
+      }
+    } else if (type === 'pink') {
       // Paul Kellet's refined pink noise filter.
       var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
       for (var i = 0; i < frameCount; i++) {
@@ -610,7 +580,7 @@
     var now = noiseCtx.currentTime;
     noiseGain.gain.cancelScheduledValues(now);
     noiseGain.gain.setValueAtTime(0, now);
-    noiseGain.gain.linearRampToValueAtTime(volume, now + 1);
+    noiseGain.gain.linearRampToValueAtTime(volume * volume, now + 1);
 
     source.connect(noiseGain);
     source.start();
@@ -619,7 +589,7 @@
 
   function setNoiseVolume(volume) {
     if (noiseGain && noiseCtx) {
-      noiseGain.gain.setValueAtTime(volume, noiseCtx.currentTime);
+      noiseGain.gain.setValueAtTime(volume * volume, noiseCtx.currentTime);
     }
   }
 
@@ -634,12 +604,13 @@
         lineFocus: parsed.lineFocus !== false,
         bionic: parsed.bionic === true,
         readingLane: parsed.readingLane === true,
-        noiseType: parsed.noiseType === 'pink' ? 'pink' : 'brown',
+        readingWide: parsed.readingWide === true,
+        noiseType: ['brown', 'pink', 'white', 'violet'].includes(parsed.noiseType) ? parsed.noiseType : 'brown',
         noiseOn: !!parsed.noiseOn,
-        volume: typeof parsed.volume === 'number' ? parsed.volume : 0.3,
+        volume: typeof parsed.volume === 'number' && parsed.volume >= 0 && parsed.volume <= 1 ? parsed.volume : 0.3,
       };
     } catch (e) {
-      return { lineFocus: true, bionic: false, readingLane: false, noiseType: 'brown', noiseOn: false, volume: 0.3 };
+      return { lineFocus: true, bionic: false, readingLane: false, readingWide: false, noiseType: 'brown', noiseOn: false, volume: 0.3 };
     }
   }
 
@@ -649,7 +620,8 @@
 
   function applyReadingPrefs() {
     var prefs = loadTokenPrefs();
-    article.classList.toggle('reading-lane', prefs.readingLane);
+    article.classList.toggle('reading-lane', prefs.readingLane && !prefs.readingWide);
+    document.body.classList.toggle('reading-wide', prefs.readingWide);
     setBionicEnabled(prefs.bionic);
   }
 
@@ -659,13 +631,15 @@
     var lineFocusChk = document.getElementById('tc-line-focus');
     var bionicChk = document.getElementById('tc-bionic');
     var readingLaneChk = document.getElementById('tc-reading-lane');
+    var readingWideChk = document.getElementById('tc-reading-wide');
     var noiseOnChk = document.getElementById('tc-noise-on');
     var noiseTypeSel = document.getElementById('tc-noise-type');
     var noiseVolumeRange = document.getElementById('tc-noise-volume');
 
     lineFocusChk.checked = prefs.lineFocus;
     bionicChk.checked = prefs.bionic;
-    readingLaneChk.checked = prefs.readingLane;
+    readingLaneChk.checked = prefs.readingLane && !prefs.readingWide;
+    readingWideChk.checked = prefs.readingWide;
     noiseOnChk.checked = false; // never auto-start audio: user must click
     noiseTypeSel.value = prefs.noiseType;
     noiseVolumeRange.value = String(prefs.volume);
@@ -684,8 +658,18 @@
 
     readingLaneChk.addEventListener('change', function () {
       prefs.readingLane = readingLaneChk.checked;
+      if (prefs.readingLane) { prefs.readingWide = false; readingWideChk.checked = false; document.body.classList.remove('reading-wide'); }
       saveTokenPrefs(prefs);
       article.classList.toggle('reading-lane', prefs.readingLane);
+      setLineFocusEnabled(prefs.lineFocus);
+    });
+
+    readingWideChk.addEventListener('change', function () {
+      prefs.readingWide = readingWideChk.checked;
+      if (prefs.readingWide) { prefs.readingLane = false; readingLaneChk.checked = false; article.classList.remove('reading-lane'); }
+      saveTokenPrefs(prefs);
+      document.body.classList.toggle('reading-wide', prefs.readingWide);
+      setLineFocusEnabled(prefs.lineFocus);
     });
 
     noiseOnChk.addEventListener('change', function () {
