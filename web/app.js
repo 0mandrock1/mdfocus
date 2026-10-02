@@ -12,6 +12,7 @@
   var progressFill = document.getElementById('progress-fill');
   var sectionCounter = document.getElementById('section-counter');
   var tokenControls = document.getElementById('token-controls');
+  var resumeBtn = document.getElementById('tc-resume');
 
   // ---------------------------------------------------------------- tabs
   document.querySelectorAll('.src-tab').forEach(function (tab) {
@@ -91,6 +92,12 @@
     sectionCounter.classList.remove('visible');
     tokenControls.classList.remove('visible');
     teardownLineFocus();
+    teardownBookmark();
+    teardownSkimAmbient();
+    teardownBionic();
+    article.classList.remove('reading-lane');
+    stopNoise(true);
+    document.getElementById('tc-noise-on').checked = false;
     window.scrollTo(0, 0);
   });
 
@@ -110,7 +117,11 @@
     sectionCounter.classList.add('visible');
     tokenControls.classList.add('visible');
     setupLineFocus(article);
+    prepareBionic(article);
+    applyReadingPrefs();
     window.scrollTo(0, 0);
+    setupSkimAmbient();
+    setupBookmark(docId);
   }
 
   // ---------------------------------------------------------------- sections
@@ -325,6 +336,173 @@
     lineFocusState = null;
   }
 
+  // ---------------------------------------------------------------- token: bionic reading
+  // Walk text nodes so Markdown links and inline markup keep their DOM and
+  // behaviour. Process in small idle batches for long documents.
+  var bionicState = null;
+  var BIONIC_SKIP = 'pre,code,kbd,samp,script,style,svg,math,a,h1,h2,h3,h4,h5,h6';
+
+  function prepareBionic(container) {
+    teardownBionic();
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.trim() && !node.parentElement.closest(BIONIC_SKIP)) nodes.push(node);
+    }
+    bionicState = { nodes: nodes, index: 0, scheduled: false };
+  }
+
+  function markBionicWords(node) {
+    var value = node.nodeValue;
+    var words = /[\p{L}\p{N}][\p{L}\p{M}\p{N}'’]*/gu;
+    var fragment = document.createDocumentFragment();
+    var last = 0;
+    var found = false;
+    var match;
+    while ((match = words.exec(value))) {
+      var letters = Array.from(match[0]);
+      if (letters.length < 4) continue;
+      found = true;
+      fragment.appendChild(document.createTextNode(value.slice(last, match.index)));
+      var split = Math.ceil(letters.length * 0.46);
+      var prefix = document.createElement('span');
+      prefix.className = 'bionic-prefix';
+      prefix.textContent = letters.slice(0, split).join('');
+      fragment.appendChild(prefix);
+      fragment.appendChild(document.createTextNode(letters.slice(split).join('')));
+      last = match.index + match[0].length;
+    }
+    if (!found) return;
+    fragment.appendChild(document.createTextNode(value.slice(last)));
+    node.parentNode.replaceChild(fragment, node);
+  }
+
+  function scheduleBionic() {
+    var state = bionicState;
+    if (!state || state.scheduled || state.index >= state.nodes.length) return;
+    state.scheduled = true;
+    var work = function (deadline) {
+      state.scheduled = false;
+      if (state !== bionicState || !article.classList.contains('bionic-reading-on')) return;
+      var count = 0;
+      while (state.index < state.nodes.length && count < 80 &&
+             (count < 10 || !deadline || deadline.timeRemaining() > 2)) {
+        var node = state.nodes[state.index++];
+        if (node.parentNode) markBionicWords(node);
+        count++;
+      }
+      scheduleBionic();
+    };
+    if (window.requestIdleCallback) window.requestIdleCallback(work);
+    else setTimeout(work, 0);
+  }
+
+  function setBionicEnabled(on) {
+    article.classList.toggle('bionic-reading-on', on);
+    if (on) scheduleBionic();
+  }
+
+  function teardownBionic() {
+    bionicState = null;
+    article.classList.remove('bionic-reading-on');
+  }
+
+  // ---------------------------------------------------------------- token: scroll-responsive ambient
+  // A fast skim quiets the background; it returns after scrolling settles.
+  var skimState = null;
+  function setupSkimAmbient() {
+    teardownSkimAmbient();
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var state = { y: window.scrollY, time: performance.now(), timer: null, onScroll: null };
+    function onScroll() {
+      var now = performance.now();
+      var y = window.scrollY;
+      var speed = Math.abs(y - state.y) / Math.max(16, now - state.time);
+      state.y = y;
+      state.time = now;
+      var quiet = Math.min(0.75, Math.max(0, (speed - 0.6) / 2.2 * 0.75));
+      document.body.style.setProperty('--ambient-focus-opacity', String(1 - quiet));
+      clearTimeout(state.timer);
+      state.timer = setTimeout(function () {
+        document.body.style.setProperty('--ambient-focus-opacity', '1');
+      }, 260);
+    }
+    state.onScroll = onScroll;
+    skimState = state;
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  function teardownSkimAmbient() {
+    if (skimState) {
+      window.removeEventListener('scroll', skimState.onScroll);
+      clearTimeout(skimState.timer);
+      skimState = null;
+    }
+    document.body.style.removeProperty('--ambient-focus-opacity');
+  }
+
+  // ---------------------------------------------------------------- token: return to reading position
+  var bookmarkState = null;
+  function setupBookmark(docId) {
+    teardownBookmark();
+    var blocks = lineFocusState ? lineFocusState.blocks : [];
+    if (!blocks.length) return;
+    var key = 'mdfocus:position:' + docId;
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { /* private mode */ }
+    if (!saved || !Number.isInteger(saved.index) || saved.index < 0 ||
+        saved.index >= blocks.length || !Number.isFinite(saved.y) || saved.y < 0) saved = null;
+    resumeBtn.hidden = !saved || saved.y < 20;
+    var state = { blocks: blocks, key: key, y: window.scrollY, timer: null, onScroll: null, onPageHide: null };
+    function savePosition() {
+      var line = window.innerHeight * 0.38;
+      var best = -1;
+      var distance = Infinity;
+      blocks.forEach(function (block, i) {
+        var rect = block.getBoundingClientRect();
+        if (!rect.height) return;
+        var next = Math.abs(rect.top + rect.height / 2 - line);
+        if (next < distance) { best = i; distance = next; }
+      });
+      if (best >= 0) {
+        try {
+          localStorage.setItem(key, JSON.stringify({ index: best, y: Math.round(window.scrollY) }));
+        } catch (e) { /* private mode */ }
+      }
+    }
+    function onScroll() {
+      var y = window.scrollY;
+      if (Math.abs(y - state.y) < 2) return;
+      state.y = y;
+      clearTimeout(state.timer);
+      state.timer = setTimeout(savePosition, 1000);
+    }
+    state.onScroll = onScroll;
+    state.onPageHide = function () { if (state.timer) savePosition(); };
+    bookmarkState = state;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('pagehide', state.onPageHide);
+    resumeBtn.onclick = function () {
+      if (!saved) return;
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: Math.max(0, Math.min(saved.y, document.documentElement.scrollHeight - window.innerHeight)),
+        behavior: reduce ? 'auto' : 'smooth' });
+      resumeBtn.hidden = true;
+    };
+  }
+
+  function teardownBookmark() {
+    if (bookmarkState) {
+      window.removeEventListener('scroll', bookmarkState.onScroll);
+      window.removeEventListener('pagehide', bookmarkState.onPageHide);
+      clearTimeout(bookmarkState.timer);
+      bookmarkState = null;
+    }
+    resumeBtn.hidden = true;
+    resumeBtn.onclick = null;
+  }
+
   // ---------------------------------------------------------------- token: noise
   // Passive attention token — procedural brown/pink noise via Web Audio API,
   // no audio files. Off by default (autoplay policy requires a user click).
@@ -428,12 +606,14 @@
       var parsed = raw ? JSON.parse(raw) : {};
       return {
         lineFocus: parsed.lineFocus !== false,
+        bionic: parsed.bionic === true,
+        readingLane: parsed.readingLane === true,
         noiseType: parsed.noiseType === 'pink' ? 'pink' : 'brown',
         noiseOn: !!parsed.noiseOn,
         volume: typeof parsed.volume === 'number' ? parsed.volume : 0.3,
       };
     } catch (e) {
-      return { lineFocus: true, noiseType: 'brown', noiseOn: false, volume: 0.3 };
+      return { lineFocus: true, bionic: false, readingLane: false, noiseType: 'brown', noiseOn: false, volume: 0.3 };
     }
   }
 
@@ -441,15 +621,25 @@
     try { localStorage.setItem(TOKEN_PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
   }
 
+  function applyReadingPrefs() {
+    var prefs = loadTokenPrefs();
+    article.classList.toggle('reading-lane', prefs.readingLane);
+    setBionicEnabled(prefs.bionic);
+  }
+
   // ---------------------------------------------------------------- token controls wiring
   (function wireTokenControls() {
     var prefs = loadTokenPrefs();
     var lineFocusChk = document.getElementById('tc-line-focus');
+    var bionicChk = document.getElementById('tc-bionic');
+    var readingLaneChk = document.getElementById('tc-reading-lane');
     var noiseOnChk = document.getElementById('tc-noise-on');
     var noiseTypeSel = document.getElementById('tc-noise-type');
     var noiseVolumeRange = document.getElementById('tc-noise-volume');
 
     lineFocusChk.checked = prefs.lineFocus;
+    bionicChk.checked = prefs.bionic;
+    readingLaneChk.checked = prefs.readingLane;
     noiseOnChk.checked = false; // never auto-start audio: user must click
     noiseTypeSel.value = prefs.noiseType;
     noiseVolumeRange.value = String(prefs.volume);
@@ -458,6 +648,18 @@
       prefs.lineFocus = lineFocusChk.checked;
       saveTokenPrefs(prefs);
       setLineFocusEnabled(prefs.lineFocus);
+    });
+
+    bionicChk.addEventListener('change', function () {
+      prefs.bionic = bionicChk.checked;
+      saveTokenPrefs(prefs);
+      setBionicEnabled(prefs.bionic);
+    });
+
+    readingLaneChk.addEventListener('change', function () {
+      prefs.readingLane = readingLaneChk.checked;
+      saveTokenPrefs(prefs);
+      article.classList.toggle('reading-lane', prefs.readingLane);
     });
 
     noiseOnChk.addEventListener('change', function () {
