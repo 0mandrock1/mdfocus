@@ -267,15 +267,25 @@
     progressFill.style.width = '0%';
   }
 
-  // Keep the original paragraph accent, clipped to six lines below viewport centre.
+  // The focus follows one paragraph; its position is draggable within the viewport.
   var lineFocusState = null;
   var LINE_FOCUS_SELECTOR = 'p, li, blockquote, pre, h1, h2, h3, h4, h5, h6';
   var LINE_FOCUS_PALETTE = ['lime', 'cyan', 'purple', 'crimson'];
+  var FOCUS_POSITION_KEY = 'mdfocus:focus-position';
+
+  function focusPosition() {
+    try {
+      var saved = Number(localStorage.getItem(FOCUS_POSITION_KEY));
+      return saved >= 0.05 && saved <= 0.95 ? saved : 0.5;
+    } catch (e) { return 0.5; }
+  }
 
   function setLineFocusAccent() {
     var step = Math.floor((window.scrollY + window.innerHeight * 0.5) / (window.innerHeight * 0.8));
     var name = LINE_FOCUS_PALETTE[step % LINE_FOCUS_PALETTE.length];
-    article.style.setProperty('--focus-accent', 'var(--accent-' + name + ')');
+    var value = 'var(--accent-' + name + ')';
+    article.style.setProperty('--focus-accent', value);
+    if (lineFocusState) lineFocusState.handle.style.setProperty('--focus-accent', value);
   }
 
   function setupLineFocus(container) {
@@ -283,35 +293,55 @@
     var blocks = Array.prototype.slice.call(container.querySelectorAll(LINE_FOCUS_SELECTOR)).filter(function (block) {
       return !block.querySelector(LINE_FOCUS_SELECTOR);
     });
-    var state = { blocks: blocks, activeSet: [], onScroll: null, onResize: null, enabled: true };
+    var handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'focus-grip';
+    handle.textContent = '⋮⋮';
+    handle.title = 'Перетягнути лінію фокусу';
+    handle.setAttribute('aria-label', 'Перемістити лінію фокусу');
+    document.body.appendChild(handle);
+    var state = { blocks: blocks, active: null, handle: handle, position: focusPosition(), enabled: true, onScroll: null, onResize: null };
     lineFocusState = state;
 
+    function clear() {
+      if (!state.active) return;
+      state.active.classList.remove('line-active');
+      state.active.style.removeProperty('--focus-top');
+      state.active.style.removeProperty('--focus-height');
+      state.active = null;
+    }
     function apply() {
+      var anchor = state.position * window.innerHeight;
       var sample = container.querySelector('p') || container;
       var lineHeight = parseFloat(getComputedStyle(sample).lineHeight) || 27;
-      var top = window.innerHeight * 0.5;
-      var bottom = top + lineHeight * 6;
-      var next = [];
+      var chosen = null, rect = null;
       if (state.enabled) {
         setLineFocusAccent();
-        blocks.forEach(function (block) {
-          var rect = block.getBoundingClientRect();
-          var start = Math.max(rect.top, top);
-          var end = Math.min(rect.bottom, bottom);
-          if (end <= start) return;
-          block.style.setProperty('--focus-top', (start - rect.top) + 'px');
-          block.style.setProperty('--focus-height', (end - start) + 'px');
-          block.classList.add('line-active');
-          next.push(block);
-        });
+        for (var i = 0; i < blocks.length; i++) {
+          var candidate = blocks[i].getBoundingClientRect();
+          if (candidate.height && candidate.bottom > anchor) {
+            chosen = blocks[i];
+            rect = candidate;
+            break;
+          }
+        }
       }
-      state.activeSet.forEach(function (block) {
-        if (next.indexOf(block) !== -1) return;
-        block.classList.remove('line-active');
-        block.style.removeProperty('--focus-top');
-        block.style.removeProperty('--focus-height');
-      });
-      state.activeSet = next;
+      if (!chosen || rect.top >= window.innerHeight) {
+        clear();
+        handle.classList.remove('visible');
+        return;
+      }
+      var start = Math.max(rect.top, anchor);
+      var end = Math.min(rect.bottom, start + lineHeight * 6);
+      if (end <= start) { clear(); handle.classList.remove('visible'); return; }
+      if (state.active !== chosen) clear();
+      chosen.style.setProperty('--focus-top', (start - rect.top) + 'px');
+      chosen.style.setProperty('--focus-height', (end - start) + 'px');
+      chosen.classList.add('line-active');
+      state.active = chosen;
+      handle.style.top = start + 'px';
+      handle.style.left = Math.max(28, rect.left) + 'px';
+      handle.classList.add('visible');
     }
     var ticking = false;
     function onScroll() {
@@ -319,6 +349,39 @@
       ticking = true;
       requestAnimationFrame(function () { ticking = false; apply(); });
     }
+    function moveTo(fraction) {
+      state.position = Math.max(0.05, Math.min(0.95, fraction));
+      try { localStorage.setItem(FOCUS_POSITION_KEY, String(state.position)); } catch (e) { /* private mode */ }
+      onScroll();
+    }
+    var dragOffset = 0;
+    function pointerDown(event) {
+      dragOffset = event.clientY - state.position * window.innerHeight;
+      handle.setPointerCapture(event.pointerId);
+      handle.classList.add('dragging');
+      event.preventDefault();
+    }
+    function pointerMove(event) {
+      if (!handle.hasPointerCapture(event.pointerId)) return;
+      moveTo((event.clientY - dragOffset) / window.innerHeight);
+    }
+    function pointerUp(event) {
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+      handle.classList.remove('dragging');
+    }
+    function keyDown(event) {
+      if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      var step = (parseFloat(getComputedStyle(container.querySelector('p') || container).lineHeight) || 27) / window.innerHeight;
+      var next = event.key === 'Home' ? 0.05 : event.key === 'End' ? 0.95 :
+        state.position + (event.key === 'ArrowUp' ? -step : step);
+      moveTo(next);
+      event.preventDefault();
+    }
+    handle.addEventListener('pointerdown', pointerDown);
+    handle.addEventListener('pointermove', pointerMove);
+    handle.addEventListener('pointerup', pointerUp);
+    handle.addEventListener('pointercancel', pointerUp);
+    handle.addEventListener('keydown', keyDown);
     state.onScroll = onScroll;
     state.onResize = onScroll;
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -337,11 +400,12 @@
     if (!lineFocusState) return;
     window.removeEventListener('scroll', lineFocusState.onScroll);
     window.removeEventListener('resize', lineFocusState.onResize);
-    lineFocusState.activeSet.forEach(function (block) {
-      block.classList.remove('line-active');
-      block.style.removeProperty('--focus-top');
-      block.style.removeProperty('--focus-height');
-    });
+    if (lineFocusState.active) {
+      lineFocusState.active.classList.remove('line-active');
+      lineFocusState.active.style.removeProperty('--focus-top');
+      lineFocusState.active.style.removeProperty('--focus-height');
+    }
+    lineFocusState.handle.remove();
     lineFocusState = null;
   }
 

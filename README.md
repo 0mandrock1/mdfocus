@@ -133,7 +133,9 @@ WantedBy=multi-user.target
 - **Reading width** offers a narrow 58-character lane or a full-width page.
   Both are off by default.
 - **Focus guide** highlights at most six rendered lines from the viewport centre downward
-  with the paragraph accent. The stronger accent rotates every 0.8 viewport.
+  on one paragraph at a time. It shrinks at the paragraph end, then jumps
+  to the next. Drag the grip beside the text to reposition it; the position
+  is saved locally. The stronger accent rotates every 0.8 viewport.
 - **Noise** offers brown, pink, white, and violet types. The volume slider
   uses a finer step and a squared gain curve for quieter low settings.
 - **Continue reading** appears when a local position exists for the same

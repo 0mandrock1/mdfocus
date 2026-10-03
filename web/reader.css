@@ -16,3 +16,15 @@
   pointer-events:none;
 }
 @media print{.line-active{background:none;padding-left:0}.line-active::before{display:none}}
+
+.focus-grip{
+  position:fixed; z-index:70; width:28px; height:48px; transform:translate(-100%,-50%);
+  display:none; align-items:center; justify-content:center; touch-action:none;
+  border:1px solid var(--focus-accent,var(--rd-accent,currentColor)); border-radius:6px;
+  color:var(--focus-accent,var(--rd-accent,currentColor)); background:var(--card);
+  font:700 18px/1 sans-serif; cursor:grab; box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
+.focus-grip.visible{display:flex}
+.focus-grip.dragging{cursor:grabbing}
+.focus-grip:focus-visible{outline:2px solid var(--rd-accent,currentColor);outline-offset:2px}
+@media print{.focus-grip{display:none!important}}

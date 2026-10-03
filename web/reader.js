@@ -17,7 +17,8 @@
  *                              position — NOT a read/understood claim) | 'legacy' (mdfocus: idx/total)
  *   options.counterText       function(idx,total)->string
  *   options.ambient           true -> call window.mandrock0Ambient.reseed per section (mdfocus only)
- *   options.focusSelector     blocks used for reading position
+ *   options.focusSelector     blocks used for reading position and focus
+ *   Focus grip position is saved under prefsKey + ':focus-position'.
  * Noise never starts on init, never restores from prefs: it needs a click in THIS page view.
  * Prefs are versioned by prefsKey, can be reset, and never leave the browser.
  */
@@ -70,6 +71,16 @@
     var destroyed = false, listeners = [], sections = [], blocks = [], active = [];
     var lastIdx = null, lineOn = false;
     var noise = { ctx: null, src: null, gain: null, on: false };
+    var focusPositionKey = prefsKey + ':focus-position';
+    var savedPosition = Number(lsGet(focusPositionKey));
+    var focusY = savedPosition >= 0.05 && savedPosition <= 0.95 ? savedPosition : 0.5;
+    var grip = document.createElement('button');
+    grip.type = 'button';
+    grip.className = 'focus-grip';
+    grip.textContent = '⋮⋮';
+    grip.title = 'Перетягнути лінію фокусу';
+    grip.setAttribute('aria-label', 'Перемістити лінію фокусу');
+    document.body.appendChild(grip);
 
     function on(target, ev, fn, opts) { target.addEventListener(ev, fn, opts); listeners.push([target, ev, fn, opts]); }
 
@@ -138,10 +149,12 @@
     }
     function accent() {
       var step = Math.floor(((window.pageYOffset || document.documentElement.scrollTop || 0) + window.innerHeight * 0.5) / (window.innerHeight * 0.8));
-      rootEl.style.setProperty('--focus-accent', 'var(--accent-' + PALETTE[step % PALETTE.length] + ', var(--rd-accent, currentColor))');
+      var value = 'var(--accent-' + PALETTE[step % PALETTE.length] + ', var(--rd-accent, currentColor))';
+      rootEl.style.setProperty('--focus-accent', value);
+      grip.style.setProperty('--focus-accent', value);
     }
 
-    // ---- paragraph accent clipped to six lines from viewport centre down
+    // ---- focus one paragraph; shorten at its end, then jump to the next
     function clearFocus() {
       active.forEach(function (block) {
         block.classList.remove('line-active');
@@ -151,36 +164,69 @@
       active = [];
     }
     function applyFocus() {
-      if (!lineOn) { clearFocus(); return; }
-      accent();
+      var anchor = focusY * window.innerHeight;
+      var chosen = null, rect = null;
+      if (lineOn) {
+        accent();
+        for (var i = 0; i < blocks.length; i++) {
+          var candidate = blocks[i].getBoundingClientRect();
+          if (candidate.height && candidate.bottom > anchor) {
+            chosen = blocks[i]; rect = candidate; break;
+          }
+        }
+      }
+      if (!chosen || rect.top >= window.innerHeight) {
+        clearFocus(); grip.classList.remove('visible'); return;
+      }
       var sample = rootEl.querySelector('p') || rootEl;
       var lineHeight = parseFloat(getComputedStyle(sample).lineHeight) || 27;
-      var top = window.innerHeight * 0.5;
-      var bottom = top + lineHeight * 6;
-      var next = [];
-      blocks.forEach(function (block) {
-        var rect = block.getBoundingClientRect();
-        var start = Math.max(rect.top, top);
-        var end = Math.min(rect.bottom, bottom);
-        if (end <= start) return;
-        block.style.setProperty('--focus-top', (start - rect.top) + 'px');
-        block.style.setProperty('--focus-height', (end - start) + 'px');
-        block.classList.add('line-active');
-        next.push(block);
-      });
-      active.forEach(function (block) {
-        if (next.indexOf(block) !== -1) return;
-        block.classList.remove('line-active');
-        block.style.removeProperty('--focus-top');
-        block.style.removeProperty('--focus-height');
-      });
-      active = next;
+      var start = Math.max(rect.top, anchor);
+      var end = Math.min(rect.bottom, start + lineHeight * 6);
+      if (end <= start) { clearFocus(); grip.classList.remove('visible'); return; }
+      if (active[0] !== chosen) clearFocus();
+      chosen.style.setProperty('--focus-top', (start - rect.top) + 'px');
+      chosen.style.setProperty('--focus-height', (end - start) + 'px');
+      chosen.classList.add('line-active');
+      active = [chosen];
+      grip.style.top = start + 'px';
+      grip.style.left = Math.max(28, rect.left) + 'px';
+      grip.classList.add('visible');
     }
     function setLineFocus(onNow) {
       lineOn = !!onNow;
       applyFocus();
       if (ui.lineFocus) ui.lineFocus.checked = lineOn;
     }
+    function moveFocus(fraction) {
+      focusY = Math.max(0.05, Math.min(0.95, fraction));
+      lsSet(focusPositionKey, String(focusY));
+      onScroll();
+    }
+    var dragOffset = 0;
+    on(grip, 'pointerdown', function (event) {
+      dragOffset = event.clientY - focusY * window.innerHeight;
+      grip.setPointerCapture(event.pointerId);
+      grip.classList.add('dragging');
+      event.preventDefault();
+    });
+    on(grip, 'pointermove', function (event) {
+      if (grip.hasPointerCapture(event.pointerId)) moveFocus((event.clientY - dragOffset) / window.innerHeight);
+    });
+    function stopDrag(event) {
+      if (grip.hasPointerCapture(event.pointerId)) grip.releasePointerCapture(event.pointerId);
+      grip.classList.remove('dragging');
+    }
+    on(grip, 'pointerup', stopDrag);
+    on(grip, 'pointercancel', stopDrag);
+    on(grip, 'keydown', function (event) {
+      if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      var sample = rootEl.querySelector('p') || rootEl;
+      var step = (parseFloat(getComputedStyle(sample).lineHeight) || 27) / window.innerHeight;
+      var next = event.key === 'Home' ? 0.05 : event.key === 'End' ? 0.95 :
+        focusY + (event.key === 'ArrowUp' ? -step : step);
+      moveFocus(next);
+      event.preventDefault();
+    });
 
     // ---- noise (click-initiated only)
     function startNoise() {
@@ -263,6 +309,7 @@
       listeners.forEach(function (l) { l[0].removeEventListener(l[1], l[2], l[3]); });
       stopNoise(true);
       clearFocus();
+      grip.remove();
       if (ui.fill) ui.fill.style.width = '0%';
       if (o.sections !== 'existing') {
         sections.forEach(function (s) { while (s.firstChild) s.parentNode.insertBefore(s.firstChild, s); s.parentNode.removeChild(s); });
