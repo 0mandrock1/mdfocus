@@ -18,6 +18,7 @@ web/app.js       client logic: paste/upload/URL input, markdown render via
                  marked.js, reading parts, navigation, progress and resume,
                  six-line focus window, bionic reading, skim-responsive ambient,
                  narrow/full-width modes, and noise
+web/interactions.js  sentence anchors and speech, hold-to-scroll, table cards
 web/reader.js    reusable reader module for integrations
 web/reader.css   reusable focus guide styles
 web/og.png       Open Graph preview image
@@ -77,6 +78,7 @@ Deploy targets (not part of this repo, see production paths below):
 
 - `web/index.html` → `/var/www/html/mdfocus/index.html`
 - `web/app.js` → `/var/www/html/mdfocus/app.js`
+- `web/interactions.js` → `/var/www/html/mdfocus/interactions.js`
 - `web/og.png` → `/var/www/html/mdfocus/og.png`
 - `api/app.py` → `/opt/mdfocus-api/app.py`
 
@@ -132,6 +134,21 @@ WantedBy=multi-user.target
 - **One part at a time** keeps the current part visible. Switch back to continuous
   reading at the same place. The progress indicator tracks position in the text,
   including within a part.
+- **Back to reading** records your position before a jump through the contents
+  or a link within the document. One tap returns to that position, even after
+  several jumps.
+- **Sentence anchor** fixes the tapped line's vertical position while the
+  document reflows. Tap **Якір** again to clear it.
+- **Hold to scroll** runs while you hold **Пливти**. Move right to speed up or
+  left to slow down. Space or Enter also works while the button has focus.
+  The existing focus grip still adjusts the focus line by vertical dragging.
+- **Read aloud from a sentence** uses your browser's speech synthesis service.
+  Tap **Озвучити**, then a sentence. Pause leaves the current sentence marked,
+  and resuming repeats that sentence. In one-part mode, speech stops at the end
+  of the visible part. Language can be selected in settings.
+- **Table cards** show the cells of one row with their column headings. Open
+  them from the button above a table or tap a row on a touch screen. Swipe or use
+  the arrow buttons to move through rows.
 - **Bionic reading** bolds and italicizes the first part of words in prose and list text. Code,
   headings, and links retain their original markup. It is off by default.
 - **Skim-responsive ambient** fades the shared ambient canvases as scroll speed

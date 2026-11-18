@@ -21,6 +21,8 @@
   var nextBtn = document.getElementById('reader-next');
   var pacedBtn = document.getElementById('reader-paced');
   var locationLabel = document.getElementById('reader-location');
+  var returnBtn = document.getElementById('reader-return');
+  var interactions = window.createMdfocusInteractions(article, readingBottom);
   var sourceRequest = 0;
 
   // ---------------------------------------------------------------- tabs
@@ -120,13 +122,14 @@
     teardownLineFocus();
     teardownTables();
     article.innerHTML = marked.parse(raw);
-    wrapTables(article);
+    var tables = wrapTables(article);
     var parts = buildSections(article);
     if (!parts.length) {
       setStatus('немає тексту для читання', true);
       return;
     }
     setStatus('');
+    tables.forEach(function (table) { interactions.attachTable(table, table.parentElement); });
     article.classList.add('visible');
     sourcePanel.style.display = 'none';
     resetRow.style.display = '';
@@ -141,14 +144,13 @@
 
   // mdfocus:tables — wrap every rendered <table> in a scrollable container so
   // a wide table scrolls within itself instead of stretching the page. Runs
-  // right after innerHTML is set, before buildSections() groups top-level
-  // children, so the wrapper <div> (not the <table>) becomes the section
-  // child — it never matches LINE_FOCUS_SELECTOR and is not picked up as a
-  // focusable block.
+  // before buildSections() groups top-level children. The table and its card
+  // button stay in a single section child so existing bookmarks keep their
+  // block indices.
   var tableObserver = null;
   function wrapTables(container) {
     var tables = Array.prototype.slice.call(container.querySelectorAll('table'));
-    if (!tables.length) return;
+    if (!tables.length) return tables;
     tableObserver = new ResizeObserver(function (entries) {
       entries.forEach(function (entry) {
         updateTable(entry.target.closest('.table-wrap'));
@@ -157,12 +159,15 @@
     tables.forEach(function (table) {
       var wrap = document.createElement('div');
       wrap.className = 'table-wrap';
-      table.parentNode.insertBefore(wrap, table);
+      var unit = document.createElement('div');
+      table.before(unit);
+      unit.appendChild(wrap);
       wrap.appendChild(table);
       wrap.addEventListener('scroll', function () { updateTable(wrap); }, { passive: true });
       tableObserver.observe(wrap);
       tableObserver.observe(table);
     });
+    return tables;
   }
 
   function updateTable(wrap) {
@@ -328,6 +333,8 @@
       percent: null,
       paced: false,
       jumpY: null,
+      ticket: null,
+      anchors: indexLinks(),
       scrollY: window.scrollY,
       frame: null,
       timer: null,
@@ -382,6 +389,7 @@
       readerWrap.style.setProperty('--reader-dock-space', Math.ceil(space) + 'px');
       state.refresh();
       if (lineFocusState) lineFocusState.onScroll();
+      interactions.refresh(true);
     });
     state.resizeObserver.observe(tokenControls);
     state.resizeObserver.observe(article);
@@ -396,6 +404,8 @@
     var state = reading;
     if (!state) return;
     state.flush();
+    interactions.reset();
+    returnBtn.hidden = true;
     window.removeEventListener('scroll', state.onScroll);
     window.removeEventListener('resize', state.refresh);
     window.removeEventListener('pagehide', state.flush);
@@ -440,19 +450,82 @@
     if (lineFocusState) lineFocusState.onScroll();
   }
 
-  function goToPart(index) {
+  function dockTicket() {
+    if (reading.ticket) return;
+    reading.ticket = { position: positionAtLine(reading), y: window.scrollY, width: article.clientWidth };
+    returnBtn.hidden = false;
+  }
+
+  function goToTarget(index, target) {
     if (index < 0 || index >= reading.parts.length) return;
+    interactions.reset();
     revealPart(index, reading.paced);
     var part = reading.parts[index];
-    placeReader(part.element, 0);
-    (part.heading || part.element).focus({ preventScroll: true });
+    placeReader(target || part.element, 0);
+    var focusTarget = target || part.heading || part.element;
+    if (!focusTarget.hasAttribute('tabindex') && focusTarget.tabIndex < 0) focusTarget.tabIndex = -1;
+    focusTarget.focus({ preventScroll: true });
     finishMove(true);
   }
 
-  previousBtn.addEventListener('click', function () { goToPart(partIndex(reading) - 1); });
-  nextBtn.addEventListener('click', function () { goToPart(partIndex(reading) + 1); });
+  function indexLinks() {
+    var anchors = new Map();
+    article.querySelectorAll('[id], a[name]').forEach(function (element) {
+      var name = element.id || element.getAttribute('name');
+      if (name && !anchors.has(name)) anchors.set(name, element);
+    });
+    article.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(function (heading) {
+      if (heading.id) return;
+      var slug = heading.textContent.trim().toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s_-]/gu, '').replace(/\s+/g, '-');
+      if (!slug) return;
+      var name = slug;
+      for (var n = 1; anchors.has(name); n++) name = slug + '-' + n;
+      anchors.set(name, heading);
+      if (!document.getElementById(name)) heading.id = name;
+    });
+    return anchors;
+  }
+
+  returnBtn.addEventListener('click', function () {
+    var ticket = reading && reading.ticket;
+    if (!ticket) return;
+    reading.ticket = null;
+    returnBtn.hidden = true;
+    interactions.reset();
+    var position = ticket.position;
+    revealPart(position.part, position.paced);
+    var block = reading.parts[position.part].element.children[position.block];
+    if (ticket.width === article.clientWidth) window.scrollTo(0, ticket.y);
+    else placeReader(block, position.offset);
+    article.focus({ preventScroll: true });
+    finishMove(true);
+  });
+
+  article.addEventListener('click', function (event) {
+    var link = event.target.closest('a[href]');
+    if (!reading || !link || event.defaultPrevented || event.button !== 0 || event.metaKey ||
+        event.ctrlKey || event.shiftKey || event.altKey || link.hasAttribute('download') ||
+        (link.target && link.target.toLowerCase() !== '_self')) return;
+    var name;
+    try {
+      var url = new URL(link.getAttribute('href'), location.href);
+      if (url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search) return;
+      name = decodeURIComponent(url.hash.slice(1));
+    } catch (e) { return; }
+    var target = reading.anchors.get(name);
+    var part = target && target.closest('.mdfocus-section');
+    var index = part ? reading.parts.findIndex(function (entry) { return entry.element === part; }) : -1;
+    if (index < 0) return;
+    event.preventDefault();
+    dockTicket();
+    goToTarget(index, target);
+  });
+
+  previousBtn.addEventListener('click', function () { goToTarget(partIndex(reading) - 1); });
+  nextBtn.addEventListener('click', function () { goToTarget(partIndex(reading) + 1); });
   pacedBtn.addEventListener('click', function () {
     var position = positionAtLine(reading);
+    interactions.reset();
     revealPart(position.part, !reading.paced);
     placeReader(reading.parts[position.part].element.children[position.block], position.offset);
     finishMove(true);
@@ -460,6 +533,7 @@
   resumeBtn.addEventListener('click', function () {
     var saved = reading.saved;
     if (!saved) return;
+    interactions.reset();
     if (saved.version === 2) {
       revealPart(saved.part, saved.paced === true && reading.parts.length > 1);
       var block = reading.parts[saved.part].element.children[saved.block];
@@ -473,6 +547,7 @@
     finishMove(false);
   });
   document.getElementById('reader-outline-open').addEventListener('click', function () {
+    interactions.stopScroll();
     outline.showModal();
     reading.entries[partIndex(reading)].focus();
   });
@@ -480,9 +555,12 @@
     var button = event.target.closest('button[data-part-index]');
     if (!button) return;
     outline.close();
-    goToPart(Number(button.dataset.partIndex));
+    var index = Number(button.dataset.partIndex);
+    if (index !== partIndex(reading)) dockTicket();
+    goToTarget(index);
   });
   document.getElementById('reader-settings-open').addEventListener('click', function () {
+    interactions.stopScroll();
     settings.showModal();
   });
   [outline, settings].forEach(function (dialog) {
@@ -535,9 +613,12 @@
       state.active.style.removeProperty('--focus-height');
       state.active = null;
     }
+    function focusAnchor() {
+      return Math.max(0, Math.min(state.position * window.innerHeight, readingBottom() - 16));
+    }
     function apply() {
       if (lineFocusState !== state || !reading) return;
-      var anchor = state.position * window.innerHeight;
+      var anchor = focusAnchor();
       var lineHeight = parseFloat(getComputedStyle(sample).lineHeight) || 27;
       var chosen = null, rect = null;
       if (state.enabled) {
@@ -570,7 +651,7 @@
       chosen.style.setProperty('--focus-height', (end - start) + 'px');
       chosen.classList.add('line-active');
       state.active = chosen;
-      handle.style.top = start + 'px';
+      handle.style.top = Math.min(start, Math.max(24, readingBottom() - 16)) + 'px';
       handle.style.left = Math.max(28, rect.left) + 'px';
       handle.classList.add('visible');
     }
@@ -587,7 +668,8 @@
     }
     var dragOffset = 0;
     function pointerDown(event) {
-      dragOffset = event.clientY - state.position * window.innerHeight;
+      interactions.stopScroll();
+      dragOffset = event.clientY - focusAnchor();
       handle.setPointerCapture(event.pointerId);
       handle.classList.add('dragging');
       event.preventDefault();
@@ -696,6 +778,7 @@
         if (node.parentNode) markBionicWords(node);
         count++;
       }
+      interactions.refresh(true);
       scheduleBionic();
     };
     if (window.requestIdleCallback) window.requestIdleCallback(work);
