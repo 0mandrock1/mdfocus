@@ -1,8 +1,9 @@
 # mdfocus
 
 A client-side raw-markdown reader with a "focus token" technique for attention
-(section pacing + progress rail, six-line focus window, bionic reading, scroll-responsive ambient, narrow and full-width
-reading modes, a resume position, and optional brown/pink/white/violet noise), paired with a minimal
+(contents, one-part reading, a progress rail, six-line focus window, bionic reading,
+optional ambient animation, reading-width controls, a local resume position,
+and optional brown/pink/white/violet noise), paired with a minimal
 server-side fetch proxy so the browser can pull `.md`/text content from
 external URLs that don't send CORS headers.
 
@@ -12,12 +13,11 @@ tokens, and not auth tokens.
 ## Repo layout
 
 ```
-web/index.html   static page (reader UI, token/dwell logic markup)
+web/index.html   static page (source controls, reading dock, contents, settings)
 web/app.js       client logic: paste/upload/URL input, markdown render via
-                 marked.js, h1/h2 section splitting, dwell/progress pacing,
+                 marked.js, reading parts, navigation, progress and resume,
                  six-line focus window, bionic reading, skim-responsive ambient,
-                 narrow/full-width modes, local resume position, noise; prefs live in localStorage
-                 only (nothing is sent to the server)
+                 narrow/full-width modes, and noise
 web/reader.js    reusable reader module for integrations
 web/reader.css   reusable focus guide styles
 web/og.png       Open Graph preview image
@@ -125,11 +125,19 @@ WantedBy=multi-user.target
 
 ## Focus controls
 
+- **Contents and navigation** jump between Markdown headings at any level. Longer
+  sections and documents without headings are divided at Markdown block boundaries
+  after roughly 450 words. A single large block, such as a code fence or a long
+  paragraph, stays together.
+- **One part at a time** keeps the current part visible. Switch back to continuous
+  reading at the same place. The progress indicator tracks position in the text,
+  including within a part.
 - **Bionic reading** bolds and italicizes the first part of words in prose and list text. Code,
   headings, and links retain their original markup. It is off by default.
 - **Skim-responsive ambient** fades the shared ambient canvases as scroll speed
-  rises, then restores them after scrolling settles. It is disabled when the
-  browser requests reduced motion.
+  rises, then restores them after scrolling settles. Turn off the animation in
+  reader settings. Scroll-responsive fading is disabled when the browser requests
+  reduced motion.
 - **Reading width** offers a narrow 58-character lane or a full-width page.
   Both are off by default.
 - **Focus guide** highlights at most six rendered lines from the viewport centre downward
@@ -139,6 +147,8 @@ WantedBy=multi-user.target
 - **Noise** offers brown, pink, white, and violet types. The volume slider
   uses a finer step and a squared gain curve for quieter low settings.
 - **Continue reading** appears when a local position exists for the same
-  Markdown text. It restores that scroll position only when clicked.
+  Markdown text. Click it to restore the reading mode and position in the same
+  Markdown block, even after the display width changes. Saved positions from
+  earlier versions restore by scroll offset.
 - Reader switches and positions are stored in browser localStorage. Audio never
   starts without a click. None of these values are sent to the server.

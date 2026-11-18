@@ -70,6 +70,11 @@
   article#article.visible{display:block;}
   article#article h1, article#article h2, article#article h3{font-weight:700; line-height:1.3;}
   article#article p{line-height:1.65; font-size:1rem;}
+  article#article{overflow-wrap:anywhere;}
+  article#article img{max-width:100%; height:auto;}
+  .mdfocus-section{display:flow-root;}
+  .mdfocus-section[hidden]{display:none;}
+  #article:focus,.mdfocus-section:focus,.mdfocus-section :is(h1,h2,h3,h4,h5,h6):focus{outline:none;}
   article#article pre{
     background:var(--muted); border:1px solid var(--border); border-radius:8px;
     padding:12px 14px; overflow-x:auto; font-size:.85rem;
@@ -124,6 +129,7 @@
     opacity:var(--ambient-focus-opacity, 1);
     transition:opacity .65s ease;
   }
+  body.reader-quiet canvas[data-mandrock0-ambient]{display:none!important;}
 
   .mdfocus-sep{margin:2em 0 1.4em;}
   .mdfocus-sep hr{border:none; border-top:1px solid var(--border); margin:0;}
@@ -133,17 +139,8 @@
 
   /* --- passive attention tokens --- */
 
-  /* section counter: fixed, low-contrast, out of the reading flow */
-  #section-counter{
-    position:fixed; top:10px; right:14px; z-index:50;
-    font-size:.68rem; color:var(--sub); letter-spacing:.04em;
-    font-variant-numeric:tabular-nums; opacity:.6; pointer-events:none;
-    display:none;
-  }
-  #section-counter.visible{display:block;}
-
   article#article .line-active{
-    position:relative; padding-left:12px; border-radius:4px;
+    position:relative; border-radius:4px;
     background-image:linear-gradient(
       color-mix(in oklch,var(--focus-accent,var(--accent-lime)) 24%,transparent),
       color-mix(in oklch,var(--focus-accent,var(--accent-lime)) 24%,transparent)
@@ -153,7 +150,7 @@
     background-repeat:no-repeat;
   }
   article#article .line-active::before{
-    content:""; position:absolute; left:0; top:var(--focus-top);
+    content:""; position:absolute; left:-5px; top:var(--focus-top);
     width:4px; height:var(--focus-height);
     background:var(--focus-accent,var(--accent-lime));
     pointer-events:none;
@@ -168,30 +165,49 @@
   .focus-grip.visible{display:flex;}
   .focus-grip.dragging{cursor:grabbing;}
   .focus-grip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  @media print{article#article .line-active{background:none;padding-left:0;} article#article .line-active::before{display:none;} .focus-grip{display:none!important;}}
+  @media print{article#article .line-active{background:none;} article#article .line-active::before{display:none;} .focus-grip{display:none!important;}}
 
-  /* controls panel: compact, fixed, low contrast, mobile-safe (~400px) */
+  body.reader-open .wrap{padding-bottom:calc(var(--reader-dock-space, 156px) + 16px);}
+  /* The dock keeps navigation visible while reading settings stay in a dialog. */
   #token-controls{
-    position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
-    z-index:50; width:min(360px, calc(100vw - 24px));
+    position:fixed; left:50%; bottom:max(8px, env(safe-area-inset-bottom)); transform:translateX(-50%);
+    z-index:50; width:min(390px, calc(100vw - 24px));
     background:var(--card); border:1px solid var(--border); border-radius:10px;
-    padding:8px 12px; font-size:.72rem; color:var(--sub);
-    display:none; gap:6px; flex-direction:column;
+    padding:5px 8px; font-size:.85rem; color:var(--text);
+    display:none; gap:3px; flex-direction:column;
     box-shadow:0 2px 10px rgba(0,0,0,.25);
   }
   #token-controls.visible{display:flex;}
-  #token-controls .tc-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
-  #token-controls label{display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;}
-  #token-controls select{
-    font-family:inherit; font-size:.7rem; color:var(--text); background:var(--muted);
-    border:1px solid var(--border); border-radius:6px; padding:2px 6px;
+  .reader-nav{display:grid; grid-template-columns:44px 1fr 44px; gap:4px;}
+  #reader-location{color:var(--sub); font-variant-numeric:tabular-nums;}
+  .reader-actions{display:flex; justify-content:space-between; gap:4px;}
+  .reader-actions button{flex:1;}
+  .reader-control{
+    min-height:44px; min-width:44px; padding:5px 8px; font:inherit; color:inherit;
+    background:transparent; border:1px solid transparent; border-radius:7px; cursor:pointer;
   }
-  #token-controls input[type="range"]{flex:1; min-width:60px;}
-  #token-controls .tc-label{color:var(--sub); min-width:60px;}
-  #tc-resume{font:inherit; color:var(--accent); background:none; border:0; padding:2px 0; cursor:pointer;}
-  #tc-resume[hidden]{display:none;}
+  .reader-control:hover,.reader-control[aria-pressed="true"]{border-color:var(--accent);}
+  .reader-control:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+  .reader-control:disabled{opacity:.45; cursor:default; border-color:transparent;}
+  #tc-resume{color:var(--accent); border-color:var(--border);}
+  .reader-dialog{
+    width:min(460px, calc(100% - 24px)); max-height:min(38rem, calc(100% - 32px));
+    padding:0 12px 12px; background:var(--card); color:var(--text);
+    border:1px solid var(--border); border-radius:12px; overflow:auto;
+  }
+  .reader-dialog::backdrop{background:rgb(0 0 0 / 65%);}
+  .reader-dialog header{position:sticky; top:0; display:flex; align-items:center;
+    justify-content:space-between; gap:8px; background:var(--card); padding:4px 0; z-index:1;}
+  .reader-dialog h2{font-size:1rem; margin:0;}
+  .reader-dialog ol{margin:0; padding:0; list-style:none;}
+  .reader-dialog li + li{margin-top:4px;}
+  .reader-dialog li button{width:100%; text-align:left; overflow-wrap:anywhere;}
+  .reader-dialog li button[aria-current="location"]{border-color:var(--accent); color:var(--accent);}
+  .reader-dialog label{display:flex; align-items:center; min-height:44px; gap:8px; cursor:pointer;}
+  .reader-dialog select{font:inherit; color:inherit; background:var(--muted); border:1px solid var(--border); border-radius:6px; padding:6px;}
+  .reader-dialog input[type="range"]{flex:1; min-width:0;}
   @media (prefers-reduced-motion:reduce){
-    canvas[data-mandrock0-ambient]{transition:none;}
+    canvas[data-mandrock0-ambient],#progress-fill{transition:none;}
   }
 </style>
 <!-- og:start (managed by og-preview skill) -->
@@ -213,28 +229,41 @@
 <!-- og:end -->
 </head>
 <body>
-<div id="progress-rail"><div id="progress-fill"></div></div>
-<div id="section-counter"></div>
-<div id="token-controls">
-  <div class="tc-row">
-    <label><input type="checkbox" id="tc-line-focus" checked> лінія фокусу</label>
-    <label><input type="checkbox" id="tc-bionic"> bionic reading</label>
-    <label><input type="checkbox" id="tc-reading-lane"> вузька колонка</label>
-    <label><input type="checkbox" id="tc-reading-wide"> на весь екран</label>
-    <button type="button" id="tc-resume" hidden>↪ продовжити читання</button>
+<div id="progress-rail" role="progressbar" aria-label="Позиція в тексті" aria-valuenow="0" hidden><div id="progress-fill"></div></div>
+<nav id="token-controls" aria-label="Керування читанням">
+  <div class="reader-nav">
+    <button type="button" class="reader-control" id="reader-prev" aria-label="Попередня частина">←</button>
+    <button type="button" class="reader-control" id="reader-outline-open" aria-haspopup="dialog">Зміст <span id="reader-location"></span></button>
+    <button type="button" class="reader-control" id="reader-next" aria-label="Наступна частина">→</button>
   </div>
-  <div class="tc-row">
-    <label><input type="checkbox" id="tc-noise-on"> шум</label>
+  <div class="reader-actions">
+    <button type="button" class="reader-control" id="reader-paced" aria-pressed="false">По частинах</button>
+    <button type="button" class="reader-control" id="reader-settings-open" aria-haspopup="dialog">Налаштування</button>
+  </div>
+  <button type="button" class="reader-control" id="tc-resume" hidden>↪ Продовжити читання</button>
+</nav>
+<dialog class="reader-dialog" id="reader-outline" aria-labelledby="reader-outline-title">
+  <header><h2 id="reader-outline-title">Зміст</h2><button type="button" class="reader-control" data-close aria-label="Закрити зміст">✕</button></header>
+  <ol id="reader-outline-list"></ol>
+</dialog>
+<dialog class="reader-dialog" id="reader-settings" aria-labelledby="reader-settings-title">
+  <header><h2 id="reader-settings-title">Налаштування читання</h2><button type="button" class="reader-control" data-close aria-label="Закрити налаштування">✕</button></header>
+  <label><input type="checkbox" id="tc-line-focus" checked> Лінія фокусу</label>
+  <label><input type="checkbox" id="tc-bionic"> Bionic reading</label>
+  <label><input type="checkbox" id="tc-reading-lane"> Вузька колонка</label>
+  <label><input type="checkbox" id="tc-reading-wide"> На всю ширину</label>
+  <label><input type="checkbox" id="tc-quiet"> Прибрати фонову анімацію</label>
+  <label><input type="checkbox" id="tc-noise-on"> Шум</label>
+  <label>Тип шуму
     <select id="tc-noise-type">
-      <option value="brown">brown</option>
-      <option value="pink">pink</option>
-      <option value="white">white</option>
-      <option value="violet">violet</option>
+      <option value="brown">Коричневий</option>
+      <option value="pink">Рожевий</option>
+      <option value="white">Білий</option>
+      <option value="violet">Фіолетовий</option>
     </select>
-    <span class="tc-label">гучність</span>
-    <input type="range" id="tc-noise-volume" min="0" max="1" step="0.001" value="0.3">
-  </div>
-</div>
+  </label>
+  <label>Гучність <input type="range" id="tc-noise-volume" min="0" max="1" step="0.001" value="0.3"></label>
+</dialog>
 <div class="wrap">
   <h1 class="title">mdfocus</h1>
   <p class="sub">рідер сирого markdown — токени концентрації уваги, не LLM-токени</p>
@@ -262,14 +291,14 @@
     <div class="status-line" id="status-line"></div>
   </div>
 
-  <article id="article"></article>
+  <article id="article" tabindex="-1"></article>
 
   <div class="reset-row" id="reset-row" style="display:none;">
     <button type="button" class="btn" id="reset-btn">← нове джерело</button>
   </div>
 
-  <footer>mdfocus · нотатки зберігаються локально в браузері</footer>
+  <footer>Налаштування й позиція читання зберігаються в цьому браузері.</footer>
 </div>
-<script src="app.js" defer></script>
+<script src="app.js?v=reading-navigation-1" defer></script>
 </body>
 </html>
