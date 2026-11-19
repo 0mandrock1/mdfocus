@@ -145,7 +145,8 @@ WantedBy=multi-user.target
 - **Read aloud from a sentence** uses your browser's speech synthesis service.
   Tap **Озвучити**, then a sentence. Pause leaves the current sentence marked,
   and resuming repeats that sentence. In one-part mode, speech stops at the end
-  of the visible part. Language can be selected in settings.
+  of the visible part. Set the language and speed (0.5×–3×) in settings.
+  Speed is saved locally and applies when the next sentence starts.
 - **Table cards** show the cells of one row with their column headings. Open
   them from the button above a table or tap a row on a touch screen. Swipe or use
   the arrow buttons to move through rows.

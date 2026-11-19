@@ -233,6 +233,8 @@
   .reader-dialog label[hidden]{display:none;}
   .reader-dialog select{font:inherit; color:inherit; background:var(--muted); border:1px solid var(--border); border-radius:6px; padding:6px;}
   .reader-dialog input[type="range"]{flex:1; min-width:0;}
+  .reader-voice-rate:not([hidden]){display:flex; align-items:center; gap:8px;}
+  #reader-voice-rate-value{min-width:4ch; text-align:right; font-variant-numeric:tabular-nums;}
   @media (prefers-reduced-motion:reduce){
     canvas[data-mandrock0-ambient],#progress-fill{transition:none;}
   }
@@ -305,6 +307,11 @@
       <option value="ru-RU">Російська</option>
     </select>
   </label>
+  <div class="reader-voice-rate" id="reader-voice-rate-setting">
+    <label for="reader-voice-rate">Швидкість озвучення</label>
+    <input type="range" id="reader-voice-rate" min="0.5" max="3" step="0.1" value="1">
+    <span id="reader-voice-rate-value" aria-hidden="true">1×</span>
+  </div>
   <label><input type="checkbox" id="tc-noise-on"> Шум</label>
   <label>Тип шуму
     <select id="tc-noise-type">
@@ -351,7 +358,7 @@
 
   <footer>Налаштування й позиція читання зберігаються в цьому браузері.</footer>
 </div>
-<script src="interactions.js?v=reader-interactions-1" defer></script>
+<script src="interactions.js?v=reader-interactions-2" defer></script>
 <script src="app.js?v=reader-interactions-1" defer></script>
 </body>
 </html>

@@ -111,6 +111,7 @@
     let frame = null;
     let repaint = false;
     let voiceLanguage = 'auto';
+    let voiceRate = 1;
     const languages = ['auto', 'uk-UA', 'en-US', 'ru-RU'];
 
     try {
@@ -124,6 +125,30 @@
     });
     speechButton.hidden = !synth;
     document.getElementById('reader-voice-setting').hidden = !synth;
+    const rateSetting = document.getElementById('reader-voice-rate-setting');
+    if (rateSetting) {
+      rateSetting.hidden = !synth;
+      const input = document.getElementById('reader-voice-rate');
+      const value = document.getElementById('reader-voice-rate-value');
+      const format = new Intl.NumberFormat('uk');
+      try {
+        const saved = Number(localStorage.getItem('mdfocus:voice-rate'));
+        if (saved >= Number(input.min) && saved <= Number(input.max)) input.value = String(saved);
+      } catch (error) { /* Storage is optional. */ }
+
+      function updateRate() {
+        voiceRate = input.valueAsNumber;
+        const label = format.format(voiceRate) + '×';
+        value.textContent = label;
+        input.setAttribute('aria-valuetext', label);
+      }
+
+      updateRate();
+      input.addEventListener('input', updateRate);
+      input.addEventListener('change', function () {
+        try { localStorage.setItem('mdfocus:voice-rate', String(voiceRate)); } catch (error) { /* Optional. */ }
+      });
+    }
 
     function updateButtons() {
       article.classList.toggle('reader-pick', !!pick);
@@ -219,6 +244,7 @@
       const line = map.text.slice(sentence.start, sentence.end);
       const utterance = new SpeechSynthesisUtterance(line);
       utterance.lang = preferredLanguage(state.block, line);
+      utterance.rate = voiceRate;
       state.utterance = utterance;
       markSpeech(state.block, sentence);
       const rect = rangeAt(map, sentence.start, sentence.end)?.getClientRects()[0];
