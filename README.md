@@ -134,6 +134,9 @@ WantedBy=multi-user.target
 - **One part at a time** keeps the current part visible. Switch back to continuous
   reading at the same place. The progress indicator tracks position in the text,
   including within a part.
+- **Clickable URLs** turn plain `https://`, `www.` and custom `scheme://` text
+  (such as `craftdocs://open` or `obsidian://open`) into links. Existing Markdown
+  links and inline/fenced code remain unchanged; dangerous schemes are excluded.
 - **Back to reading** records your position before a jump through the contents
   or a link within the document. One tap returns to that position, even after
   several jumps.

@@ -112,6 +112,71 @@
     document.querySelector('.src-tab.active').focus({ preventScroll: true });
   });
 
+  // ---------------------------------------------------------------- URL autolinks
+  // Marked covers common web URLs; handle custom :// schemes in plain text too.
+  // Walk rendered text, not raw Markdown, to preserve code and existing links.
+  var plainUrlPattern = /\b(?:[a-z][a-z0-9+.-]*:\/\/|www\.)[^\s<>"'`]+/gi;
+  var blockedUrlSchemes = /^(?:javascript|vbscript|data|file|blob|about):/i;
+
+  function trimUrlEnding(url) {
+    var brackets = { ')': '(', ']': '[', '}': '{' };
+    while (url.length) {
+      var last = url[url.length - 1];
+      if (/[.,;!?]/.test(last)) { url = url.slice(0, -1); continue; }
+      if (brackets[last] && url.split(last).length > url.split(brackets[last]).length) {
+        url = url.slice(0, -1);
+        continue;
+      }
+      break;
+    }
+    return url;
+  }
+
+  function autolinkMatches(text) {
+    var matches = [];
+    var match;
+    plainUrlPattern.lastIndex = 0;
+    while ((match = plainUrlPattern.exec(text))) {
+      var label = trimUrlEnding(match[0]);
+      if (!label) continue;
+      var href = /^www\./i.test(label) ? 'https://' + label : label;
+      if (blockedUrlSchemes.test(href)) continue;
+      try {
+        var parsed = new URL(href);
+        if (!parsed.protocol || (['http:', 'https:', 'ftp:'].includes(parsed.protocol) && !parsed.hostname)) continue;
+        if (/^www\./i.test(label) && !/^www\.(?:[a-z0-9-]+\.)+[a-z]{2,}/i.test(label)) continue;
+      } catch (e) { continue; }
+      matches.push({ start: match.index, end: match.index + label.length, label: label, href: href });
+    }
+    return matches;
+  }
+
+  function linkifyTextUrls(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      if (node.parentElement && !node.parentElement.closest('a, code, pre, script, style, textarea')) nodes.push(node);
+    }
+    nodes.forEach(function (node) {
+      var value = node.nodeValue;
+      var links = autolinkMatches(value);
+      if (!links.length) return;
+      var fragment = document.createDocumentFragment();
+      var offset = 0;
+      links.forEach(function (link) {
+        fragment.appendChild(document.createTextNode(value.slice(offset, link.start)));
+        var anchor = document.createElement('a');
+        anchor.href = link.href;
+        anchor.textContent = link.label;
+        fragment.appendChild(anchor);
+        offset = link.end;
+      });
+      fragment.appendChild(document.createTextNode(value.slice(offset)));
+      node.replaceWith(fragment);
+    });
+  }
+
   // ---------------------------------------------------------------- render
   function loadMarkdown(raw) {
     if (typeof marked === 'undefined') {
@@ -122,6 +187,7 @@
     teardownLineFocus();
     teardownTables();
     article.innerHTML = marked.parse(raw);
+    linkifyTextUrls(article);
     var tables = wrapTables(article);
     var parts = buildSections(article);
     if (!parts.length) {
