@@ -188,3 +188,5 @@ Open `/mdfocus/?url=https://tools.mandrock.me/mdfocus/demo-images.md` or tap “
 Standalone browser UX demonstrator at `/mdfocus/pulse-code-demo.html`. Not a TS IDE. Supports two consecutive radial levels (four 90-degree 52px-diameter sectors each), dwell-to-descend with movement guard, tap-based accessible fallback, then a full-screen searchable option grid. Changes are composed locally in separate structure/value/type slots and optional text, with undo/history, checkpoints and reload restore. **No network write API or tsserver.**
 
 Spec: `docs/pulse-code-product-brief.md`. Automated Chromium mobile smoke test: `node demo/qa-grammar.cjs`; regenerate actual UI images: `node demo/snapshot-grammar.cjs`. Gallery source: `web/demo-images.md`.
+
+Versioned entrypoint for the grammar-wheel demonstrator: /mdfocus/pulse-code-grammar-v3.html (source symlink to pulse-code-demo.html, deployed as a regular file). The versioned URL and script query separate it from stale cached iterations.

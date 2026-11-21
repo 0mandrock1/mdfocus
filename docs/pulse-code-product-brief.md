@@ -1,7 +1,7 @@
 # PULSE CODE · TypeScript як конструктор, а не зменшена IDE
 
 **Версія концепту:** v3 · 21 листопада 2026.
-**Прототип:** https://tools.mandrock.me/mdfocus/pulse-code-demo.html
+**Прототип:** https://tools.mandrock.me/mdfocus/pulse-code-grammar-v3.html
 **Галерея:** https://tools.mandrock.me/mdfocus/?url=https%3A%2F%2Ftools.mandrock.me%2Fmdfocus%2Fdemo-images.md
 **Принцип:** людина не приходить із гарантовано завершуваною мікрозадачею. Вона має код, контекст і хвилину чи пів години. Застосунок повинен дозволяти просуватися по кроках, не вдаючи, що невелика задача вже сформульована.
 
@@ -87,5 +87,5 @@
 
 ---
 
-**Відкрити інтерактивний конструктор:** https://tools.mandrock.me/mdfocus/pulse-code-demo.html
+**Відкрити інтерактивний конструктор:** https://tools.mandrock.me/mdfocus/pulse-code-grammar-v3.html
 **Дивитися три стани у MDfocus:** https://tools.mandrock.me/mdfocus/?url=https%3A%2F%2Ftools.mandrock.me%2Fmdfocus%2Fdemo-images.md
