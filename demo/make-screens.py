@@ -30,7 +30,7 @@ def base(title,subtitle,no):
 def footer(s, active):
     y=757
     s.extend([rect(0,y,390,87,P["panel"],0),line(0,y,390,y,P["border"])])
-    items=[("▤","Файли"),("⌕","Пошук"),("⌘","Git"),("❯_","Термінал")]
+    items=[("▤","Файли"),("</>","Код"),("⌘","Git"),("❯_","Термінал")]
     for idx,(glyph,label) in enumerate(items):
         x=49+idx*97
         if label==active: s.append(rect(x-37,y+8,74,65,P["panel2"],13,P["purple"]))
@@ -42,7 +42,7 @@ def save(name,s):
     (OUT/name).write_text('\n'.join(s),encoding="utf-8")
     print(name,(OUT/name).stat().st_size)
 # 01 editor
-s=base("Код без боротьби з екраном","gotable / feat/luna-review",1)
+s=base("Редактор без шуму","gotable / feat/luna-review",1)
 s += [pill(19,164,135,"luna-review.ts","purple"),pill(162,164,94,"gtp.ts","cyan"),text(343,185,"＋",23,P["muted"])]
 s += [rect(16,211,358,396,P["bg"],10,P["border"]),rect(19,412,352,29,P["panel2"],0),rect(20,412,4,29,P["lime"])]
 # syntax-highlighted code with semantic colors
@@ -74,9 +74,9 @@ for x,label,w in [(25,"{ }",42),(73,"( )",42),(121,"[ ]",42),(169,"=>",42),(217,
     s.append(rect(x,657,w,29,P["panel2"],8))
     s.append(text(x+w/2,677,label,15,P["white"],600,mono=True,anchor="middle"))
 s += [rect(19,702,352,41,P["panel2"],12,P["purple"]),text(36,728,"⌘  Палітра дій",13,P["white"],700),text(344,728,"⌄",18,P["purple"],700,anchor="middle")]
-footer(s,"Пошук");save("demo-editor.svg",s)
+footer(s,"Код");save("demo-editor.svg",s)
 # 02 files
-s=base("Проєкт у великому пальці","VPS / 12 файлів змінено",2)
+s=base("Проєкт під пальцем","VPS / 12 файлів змінено",2)
 s += [rect(18,166,354,48,P["panel"],12,P["border"]),text(31,197,"⌕",24,P["cyan"]),text(68,196,"Файл, символ, команда…",14,P["muted"]),pill(294,175,66,"⌘ K","purple",h=31)]
 s += [pill(19,227,126,"● VPS · online","lime",h=31),pill(152,227,110,"Git: main","cyan",h=31),pill(267,227,104,"Змін: 12","orange",h=31)]
 s += [text(23,290,"ШВИДКИЙ ДОСТУП",11,P["purple"],800),text(350,290,"⋯",20,P["muted"])]
@@ -98,6 +98,6 @@ for mark,y,content,accent in diff:
     s.append(rect(23,y,344,25,P["red"] if accent=="red" else P["green"] if accent=="green" else P["panel"],4,opacity=.12 if accent!="muted" else .5))
     s.append(text(32,y+18,content,11.6,P[accent],mono=True))
 s += [pill(27,516,108,"✓ Stage hunk","lime",h=27),pill(141,516,213,"↶ Відхилити зміни","red",h=27)]
-s += [rect(17,567,356,84,P["panel"],12,P["border"]),text(31,592,"ПЕРЕВІРКИ",11,P["purple"],800),text(31,616,"✓  vitest  76 / 76",13,P["green"],mono=True),text(31,637,"✓  oxlint  no errors",13,P["green"],mono=True)]
+s += [rect(17,567,356,84,P["panel"],12,P["border"]),text(31,592,"ПЕРЕВІРКИ",11,P["purple"],800),text(31,616,"✓  vitest · demo",13,P["green"],mono=True),text(31,637,"✓  oxlint · demo",13,P["green"],mono=True)]
 s += [rect(17,665,356,78,P["panel2"],12,P["purple"]),text(30,689,"Повідомлення коміту",11,P["muted"]),text(30,715,"Fix move score perspective",14,P["white"],700,mono=True),text(345,717,"✎",18,P["purple"])]
 footer(s,"Git");save("demo-diff.svg",s)
