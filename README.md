@@ -190,3 +190,7 @@ Standalone browser UX demonstrator at `/mdfocus/pulse-code-demo.html`. Not a TS 
 Spec: `docs/pulse-code-product-brief.md`. Automated Chromium mobile smoke test: `node demo/qa-grammar.cjs`; regenerate actual UI images: `node demo/snapshot-grammar.cjs`. Gallery source: `web/demo-images.md`.
 
 Versioned entrypoint for the grammar-wheel demonstrator: /mdfocus/pulse-code-grammar-v3.html (source symlink to pulse-code-demo.html, deployed as a regular file). The versioned URL and script query separate it from stale cached iterations.
+
+## PULSE CODE: By Example mobile interaction lab (2026-11-21)
+
+Standalone, entirely client-side experiment at `/mdfocus/pulse-by-example-20261121.html`: 415 concrete number-to-number transformations with evaluators, sample-driven discovery without operation-name input, semantic nesting/argument replacement, Undo, local persistence and explicit non-server-save status. This is a restricted AST lab, *not* a general TypeScript editor or tsserver. Full contract and manual test scenarios: `docs/pulse-behavior-lab.md`. Tests: `node --test tests/pulse-behavior.test.js`; mobile browser QA: `node demo/qa-pulse-behavior.cjs`.
