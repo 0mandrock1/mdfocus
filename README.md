@@ -194,3 +194,7 @@ Versioned entrypoint for the grammar-wheel demonstrator: /mdfocus/pulse-code-gra
 ## PULSE CODE: By Example mobile interaction lab (2026-11-21)
 
 Standalone, entirely client-side experiment at `/mdfocus/pulse-by-example-20261121.html`: 415 concrete number-to-number transformations with evaluators, sample-driven discovery without operation-name input, semantic nesting/argument replacement, Undo, local persistence and explicit non-server-save status. This is a restricted AST lab, *not* a general TypeScript editor or tsserver. Full contract and manual test scenarios: `docs/pulse-behavior-lab.md`. Tests: `node --test tests/pulse-behavior.test.js`; mobile browser QA: `node demo/qa-pulse-behavior.cjs`.
+
+### PULSE CODE guided input test
+
+`/mdfocus/pulse-guided.html` offers a **single guided path** in place of the overloaded four-tab by-example lab: choose output for `loss=-8`, then for `loss=7`, inspect best-ranked candidate and apply locally. Optional continuation demonstrates nested `Math.min` and parameter change with Undo. Shares the deterministic numeric AST catalog with `pulse-behavior-core.js`, but uses a separate browser-local namespace. The previous lab is preserved at `/mdfocus/pulse-by-example-20261121.html`. `node demo/qa-pulse-guided.cjs` verifies the guided workflow with touch input on 320×568 and 390×844. No remote TS server or file writes.

@@ -30,7 +30,7 @@ deploy_file() {
 }
 
 web_changed=0
-for f in interactions.js app.js og.png index.html demo-images.md demo-editor.svg demo-projects.svg demo-diff.svg pulse-code-demo.html pulse-code-grammar-v3.html pulse-code-demo.js pulse-code-og.png pulse-session.svg pulse-wheel.svg pulse-review.svg pulse-v3-home.png pulse-v3-wheel.png pulse-v3-grid.png uxpilot-pulse-four.md uxpilot-pulse-a.png uxpilot-pulse-b.png uxpilot-pulse-c.png uxpilot-pulse-d.png uxpilot-pulse-four.zip pulse-by-example-20261121.html pulse-behavior-core.js pulse-by-example-app.js; do
+for f in interactions.js app.js og.png index.html demo-images.md demo-editor.svg demo-projects.svg demo-diff.svg pulse-code-demo.html pulse-code-grammar-v3.html pulse-code-demo.js pulse-code-og.png pulse-session.svg pulse-wheel.svg pulse-review.svg pulse-v3-home.png pulse-v3-wheel.png pulse-v3-grid.png uxpilot-pulse-four.md uxpilot-pulse-a.png uxpilot-pulse-b.png uxpilot-pulse-c.png uxpilot-pulse-d.png uxpilot-pulse-four.zip pulse-by-example-20261121.html pulse-behavior-core.js pulse-by-example-app.js pulse-guided.html pulse-guided.js; do
     if ! deploy_file "$WEB_SRC_DIR/$f" "$WEB_DST_DIR/$f"; then
         web_changed=1
     fi

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="uk" data-accent="purple">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="PULSE CODE: простий експеримент введення TypeScript без клавіатури. Два вибори, одна пропозиція, локальний Undo.">
+<title>PULSE CODE · Один палець, одна зміна</title>
+<link rel="stylesheet" href="https://files.mandrock.me/web/mandrock0-tokens.css">
+<link rel="stylesheet" href="https://tools.mandrock.me/palettes/accents.css">
+<script defer src="https://files.mandrock.me/web/mandrock0-ambient.js" data-profile="subtle" data-section="purple"></script>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:var(--background);color:var(--foreground);font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
+button{cursor:pointer;touch-action:manipulation;font:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--page-accent);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+[hidden]{display:none!important}
+canvas[data-mandrock0-ambient]{z-index:0!important;opacity:.08!important;pointer-events:none!important}
+main{z-index:1;position:relative;max-width:500px;margin:auto;min-height:100dvh;padding:calc(10px + env(safe-area-inset-top)) 14px calc(110px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
+header{display:flex;gap:10px;align-items:center;min-height:48px}
+.brand{font-weight:900;letter-spacing:.06em;font-size:1.04rem}.brand b{color:var(--page-accent)}
+.logo{font-size:1.4rem;color:var(--page-accent);font-weight:900;letter-spacing:-.15em;transform:skew(-12deg)}
+.tag{margin-left:auto;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:7px 9px;color:var(--accent-cyan);font-size:.69rem}
+.progress{display:flex;gap:6px;margin:13px 0 18px}.progress i{flex:1;height:5px;border-radius:10px;background:var(--border)}.progress i.done{background:var(--accent-lime)}
+.eyebrow{color:var(--page-accent);font-weight:800;letter-spacing:.1em;font-size:.72rem;margin-bottom:9px}
+h1{font-size:clamp(1.56rem,7vw,2.3rem);line-height:1.09;letter-spacing:-.035em;margin:0 0 11px}
+h2{font-size:1.13rem;margin:0 0 8px}
+p{line-height:1.45;margin:0}.muted{color:var(--muted-foreground)}
+.code{border:1px solid var(--border);background:var(--card);border-radius:17px;padding:16px 14px;margin:0 0 23px}
+.code-title{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted-foreground);font-size:.73rem;margin-bottom:14px}
+.code-title span:last-child{color:var(--accent-cyan);font-weight:800}
+.code pre{white-space:pre-wrap;overflow-wrap:anywhere;font:clamp(.78rem,3.45vw,.95rem)/1.68 ui-monospace,SFMono-Regular,Consolas,monospace;margin:0;color:var(--foreground)}
+.expr{color:var(--accent-lime);font-weight:800}
+.question{font-size:.89rem;color:var(--muted-foreground);margin-bottom:18px}
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 17px}
+.choices button{min-width:0;min-height:83px;border-radius:18px;border:1px solid var(--border);background:var(--card);font-weight:850;font-size:1.6rem;display:flex;align-items:center;justify-content:center}
+.choices button:active{border-color:var(--page-accent);background:var(--secondary)}
+.breadcrumb{display:flex;gap:6px;align-items:center;color:var(--accent-cyan);font-size:.77rem;margin:6px 0 13px;flex-wrap:wrap}
+.pill{padding:7px 11px;background:var(--card);border:1px solid var(--border);border-radius:999px;font: .8rem ui-monospace,monospace}
+.comparison{display:grid;gap:10px;margin:15px 0}
+.diff{border:1px solid var(--border);border-radius:14px;background:var(--card);padding:12px 13px}
+.diff label{display:block;font-size:.72rem;color:var(--muted-foreground);margin-bottom:9px}
+.diff code{font:clamp(.77rem,3.2vw,.94rem)/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.diff.old code{color:var(--accent-crimson)}.diff.new{border-color:var(--accent-lime)}.diff.new code{color:var(--accent-lime)}
+.btn{min-height:61px;width:100%;border:1px solid var(--border);background:var(--card);border-radius:16px;font-size:1.02rem;font-weight:800;padding:11px}
+.btn.primary{background:var(--accent-lime);color:var(--background);border-color:var(--accent-lime)}
+.btn.linklike{border-color:transparent;background:transparent;font-weight:700;font-size:.88rem;min-height:53px}
+.stack{display:grid;gap:8px;margin-top:12px}
+.panel{padding:12px 14px;border:1px solid var(--border);background:var(--card);border-radius:13px;margin:12px 0}
+.warning{border-left:3px solid var(--accent-cyan);padding-left:12px;font-size:.8rem;color:var(--muted-foreground);margin:12px 0}
+.suggestions{display:grid;gap:8px;margin-top:12px}
+.suggestion{min-height:58px;text-align:left;background:var(--secondary);border:1px solid var(--border);padding:11px 13px;border-radius:13px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.suggestion strong{font-size:.86rem}.suggestion small{display:block;color:var(--muted-foreground);margin-top:5px;font:.73rem/1.3 ui-monospace,monospace;overflow-wrap:anywhere}
+.suggestion .right{color:var(--accent-lime);font-size:.8rem;font-weight:800}
+.small{font-size:.79rem}.foot{margin-top:auto;padding-top:15px;color:var(--muted-foreground);font-size:.77rem}
+.fixed{position:fixed;z-index:5;bottom:0;left:0;right:0;background:var(--background);border-top:1px solid var(--border);padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+.fixed-inner{max-width:500px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fixed span{font-size:.75rem;color:var(--muted-foreground)}
+.fixed button{min-width:84px;min-height:48px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:.8rem}
+.result{margin-top:6px;font-size:.85rem;color:var(--accent-cyan)}
+@media(max-width:350px){.code{padding:11px;margin-bottom:13px}.choices{gap:9px;margin:10px 0}.choices button{min-height:70px}.progress{margin:7px 0 11px}.question{margin-bottom:10px}}
+@media(max-height:650px){
+ main{padding-top:5px}.progress{margin:4px 0 10px}h1{font-size:1.47rem;line-height:1.04;margin-bottom:7px}
+ .eyebrow{margin-bottom:4px}.question{margin-bottom:8px}.breadcrumb{margin:4px 0 8px}
+ .comparison{margin:8px 0;gap:6px}.diff{padding:8px 10px}.diff label{margin-bottom:4px}
+ .warning{font-size:.73rem;margin:7px 0}.btn{min-height:52px}.fixed{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+ .code{margin-bottom:12px}.code-title{margin-bottom:8px}.code pre{font-size:.76rem;line-height:1.5}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header><span class="logo" aria-hidden="true">///</span><span class="brand">PULSE <b>CODE</b></span><span class="tag">ТЕСТ · V2</span></header>
+  <div class="progress" id="progress" aria-label="Прогрес кроків"><i></i><i></i><i></i></div>
+  <div class="code"><div class="code-title"><span>luna-review.ts · demo</span><span>TypeScript</span></div><pre>function calculateLoss(s: Score) {
+  const best = s.best ?? s.current;
+  const loss = best - s.current;
+  return <span class="expr" id="code-value">loss</span>;
+}</pre></div>
+  <section id="workspace" aria-live="polite"></section>
+  <div class="foot" id="foot">Тільки локальний експеримент. Ніякого запису на VPS чи запуску TypeScript.</div>
+</main>
+<div class="fixed"><div class="fixed-inner"><span id="save-status">● VPS без змін · чернетка локально</span><button id="restart" type="button">↺ Спочатку</button></div></div>
+<script defer src="pulse-behavior-core.js?v=1"></script>
+<script defer src="pulse-guided.js?v=1"></script>
+</body>
+</html>
