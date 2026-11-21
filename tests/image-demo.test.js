@@ -6,7 +6,7 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const md = fs.readFileSync(path.join(root, 'web/demo-images.md'), 'utf8');
-const imageNames = ['demo-editor.svg', 'demo-projects.svg', 'demo-diff.svg'];
+const imageNames = ['pulse-session.svg', 'pulse-wheel.svg', 'pulse-review.svg'];
 
 test('each concept image is linked and remains valid SVG', () => {
   for (const name of imageNames) {

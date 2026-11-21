@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uk" data-accent="purple">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#190719">
+<title>PULSE CODE · 90 секунд на TypeScript · інтерактивний UX-прототип</title>
+<meta name="description" content="PULSE CODE: концепт мобільного TypeScript-редактора для коротких сесій. Велика зона дії, жестове колесо, безпечний diff. Інтерактивний прототип, без запису на VPS.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PULSE CODE · TypeScript одним пальцем">
+<meta property="og:description" content="90 секунд · структурні TS-дії · колесо під великим пальцем · одна зміна">
+<meta property="og:url" content="https://tools.mandrock.me/mdfocus/pulse-code-demo.html">
+<meta property="og:image" content="https://tools.mandrock.me/mdfocus/pulse-code-og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PULSE CODE · TypeScript одним пальцем">
+<meta name="twitter:image" content="https://tools.mandrock.me/mdfocus/pulse-code-og.png">
+<link rel="stylesheet" href="https://files.mandrock.me/web/mandrock0-tokens.css">
+<link rel="stylesheet" href="https://tools.mandrock.me/palettes/accents.css">
+<script src="https://files.mandrock.me/web/mandrock0-ambient.js" data-profile="subtle" data-section="purple" defer></script>
+<style>
+  *{box-sizing:border-box}
+  :root{color-scheme:dark}
+  html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
+  body{background:var(--background);color:var(--foreground);overscroll-behavior-y:contain}
+  button,input{font:inherit}
+  button{color:inherit;cursor:pointer;touch-action:manipulation}
+  button:focus-visible,input:focus-visible{outline:3px solid var(--page-accent);outline-offset:3px}
+  .app{position:relative;z-index:1;width:100%;max-width:480px;min-height:100dvh;margin:auto;
+    display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 9px) 14px calc(env(safe-area-inset-bottom) + 14px)}
+  .mast{display:flex;align-items:center;gap:10px;min-height:50px}
+  .sigil{font-weight:900;font-size:1.5rem;color:var(--page-accent);letter-spacing:-.15em;transform:skew(-13deg)}
+  .brand{font-weight:900;letter-spacing:.06em;font-size:1.05rem}
+  .brand b{color:var(--page-accent)}
+  .grow{flex:1}
+  .tag{font-size:.71rem;border:1px solid var(--border);padding:7px 10px;border-radius:999px;
+    background:var(--card);color:var(--muted-foreground)}
+  .tiny-nav{min-width:48px;min-height:48px;background:var(--card);border:1px solid var(--border);border-radius:13px}
+  .screen{display:none;flex-direction:column;flex:1;min-height:0}
+  .screen.active{display:flex}
+  .micro{font-size:.74rem;font-weight:800;letter-spacing:.11em;color:var(--page-accent)}
+  h1{font-size:clamp(1.75rem,8vw,2.7rem);line-height:1.03;margin:18px 0 12px;letter-spacing:-.045em}
+  h2{font-size:1.45rem;margin:13px 0}
+  p{line-height:1.5}
+  .muted{color:var(--muted-foreground)}
+  .muted.small{font-size:.82rem}
+  .highlight{color:var(--accent-lime)}
+  .progress{display:flex;gap:7px;margin:18px 0 12px}
+  .progress i{height:5px;border-radius:10px;flex:1;background:var(--border)}
+  .progress i:first-child{background:var(--accent-lime)}
+  .card{background:color-mix(in oklch,var(--card) 90%,transparent);border:1px solid var(--border);border-radius:18px;padding:18px}
+  .task{display:grid;gap:9px;margin-top:12px}
+  .task-head{display:flex;gap:8px;align-items:center}
+  .task strong{display:block;font-size:clamp(1.23rem,5.5vw,1.55rem);line-height:1.22;overflow-wrap:anywhere}
+  .time{background:var(--accent-lime);color:var(--background);font-weight:900;border-radius:999px;padding:8px 12px;white-space:nowrap;font-size:.76rem}
+  .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);background:var(--card);
+    padding:8px 10px;border-radius:10px;font-size:.75rem}
+  .chip.ts{font-weight:900;color:var(--accent-cyan);letter-spacing:.05em}
+  .state-line{margin-top:12px;font-size:.78rem;display:flex;gap:9px;align-items:center}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent-lime)}
+  .spacer{flex:1;min-height:12px}
+  .actions{display:grid;gap:12px;padding-top:16px}
+  .big{width:100%;min-height:64px;border:1px solid var(--border);border-radius:17px;
+    padding:14px 17px;font-size:1.07rem;font-weight:850;display:flex;justify-content:center;align-items:center;gap:9px}
+  .big.primary{background:var(--accent-lime);border-color:var(--accent-lime);color:var(--background)}
+  .big.secondary{background:var(--card)}
+  .big:disabled{opacity:.5;cursor:default}
+  .fine{font-size:.7rem;color:var(--muted-foreground);text-align:center;margin:5px 0 0}
+  .hintbox{font-size:.77rem;color:var(--muted-foreground);border-left:3px solid var(--accent-cyan);padding-left:12px;margin-top:12px}
+  .editor-top{display:flex;gap:10px;align-items:center;min-height:54px}
+  .editor-title{font-weight:800;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .editor-sub{font-size:.74rem;color:var(--muted-foreground);margin:2px 0 12px}
+  .editor-sub strong{color:var(--accent-lime)}
+  .codebox{min-height:230px;flex:1;max-height:54dvh;overflow:auto;background:color-mix(in oklch,var(--background) 87%,var(--card));
+    border:1px solid var(--border);border-radius:14px;position:relative;padding:17px 12px}
+  .codebox pre{margin:0;white-space:pre;tab-size:2;font-size:clamp(12px,3.45vw,15px);line-height:1.85;
+    color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  .codebox .selected{background:color-mix(in oklch,var(--accent-purple) 24%,transparent);
+    border:1px solid var(--accent-purple);border-radius:6px;padding:3px 5px}
+  .codebox .problem{color:var(--accent-crimson);border-bottom:2px wavy var(--accent-crimson)}
+  .diagnostic{font-size:.79rem;line-height:1.5;color:var(--accent-cyan);margin:11px 2px}
+  .edit-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;
+    min-height:150px;padding:20px 0 5px}
+  .wheel-copy{font-size:.81rem;line-height:1.55;max-width:49%;color:var(--muted-foreground)}
+  .wheel-copy strong{display:block;color:var(--foreground);font-size:1.05rem}
+  .wheel-button{position:relative;border:2px solid var(--page-accent);border-radius:50%;width:84px;height:84px;
+    background:var(--card);box-shadow:0 0 32px color-mix(in oklch,var(--page-accent) 28%,transparent);
+    color:var(--foreground);font-size:1.25rem;font-weight:900;touch-action:none;user-select:none;flex-shrink:0;margin-right:62px}
+  .wheel-button:active{background:var(--secondary)}
+  .edit-bottom.left{flex-direction:row-reverse}
+  .edit-bottom.left .wheel-button{margin-right:0;margin-left:62px}
+  .overview{border:1px solid var(--border);border-radius:16px;padding:14px;margin-top:12px}
+  .change{display:flex;gap:12px;align-items:center;font-size:.79rem;font-family:ui-monospace,monospace;
+    white-space:pre-wrap;word-break:break-word;padding:13px 11px;margin:7px 0;border-radius:9px;line-height:1.5}
+  .change.del{color:var(--accent-crimson);background:color-mix(in oklch,var(--accent-crimson) 10%,var(--card))}
+  .change.add{color:var(--accent-lime);background:color-mix(in oklch,var(--accent-lime) 10%,var(--card))}
+  .change span{flex:1}
+  .foot-status{margin-top:10px;font-size:.85rem;padding:13px;background:var(--card);border-radius:12px}
+  #wheel{display:none;position:fixed;z-index:30;width:248px;height:248px;pointer-events:none;transform:translate(-50%,-50%);
+    filter:drop-shadow(0 0 25px color-mix(in oklch,var(--page-accent) 25%,transparent))}
+  #wheel.on{display:block}
+  #wheel svg{width:248px;height:248px;overflow:visible}
+  .wedge{stroke:var(--background);stroke-width:4}
+  .wedge.hit{stroke:var(--accent-lime);stroke-width:5;filter:brightness(1.35)}
+  .wheel-word{position:absolute;pointer-events:none;font-size:.8rem;font-weight:850;text-align:center;color:var(--foreground);
+    width:74px;transform:translate(-50%,-50%);text-shadow:0 1px 5px var(--background)}
+  .wheel-word.l0{left:25%;top:25%}.wheel-word.l1{left:75%;top:25%}
+  .wheel-word.l2{left:75%;top:75%}.wheel-word.l3{left:25%;top:75%}
+  .wheel-center{position:absolute;width:104px;height:104px;left:72px;top:72px;border-radius:50%;
+    background:var(--card);border:2px solid var(--page-accent);display:grid;place-content:center;text-align:center;font-size:.69rem;
+    padding:9px;color:var(--muted-foreground)}
+  #screen-editor.wheeling .codebox{opacity:.75}
+  .sheet-back{position:fixed;inset:0;z-index:40;background:color-mix(in oklch,var(--background) 76%,transparent);
+    display:none;align-items:flex-end;justify-content:center}
+  .sheet-back.on{display:flex}
+  .sheet{width:min(480px,100vw);background:var(--card);border:1px solid var(--border);
+    border-radius:22px 22px 0 0;padding:17px 15px calc(env(safe-area-inset-bottom) + 20px);max-height:90dvh;overflow:auto}
+  .sheet-grip{width:55px;height:5px;background:var(--muted-foreground);border-radius:10px;margin:0 auto 14px;opacity:.6}
+  .sheet h2{margin:8px 0 14px}
+  .sheet button.option{width:100%;min-height:58px;border:1px solid var(--border);border-radius:14px;
+    background:var(--secondary);font-size:1rem;text-align:left;padding:12px 16px;margin:5px 0}
+  .sheet input{width:100%;min-height:56px;border-radius:14px;background:var(--background);
+    border:1px solid var(--page-accent);color:var(--foreground);padding:12px;font-family:ui-monospace,monospace}
+  .sheet button.close{float:right;min-height:48px;min-width:70px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+  .sheet button.commit{margin-top:10px;min-height:60px;border:1px solid var(--accent-lime);
+    border-radius:14px;width:100%;background:var(--accent-lime);color:var(--background);font-weight:900}
+  .toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 20px);
+    max-width:min(94vw,440px);border:1px solid var(--page-accent);background:var(--card);padding:13px 15px;border-radius:13px;
+    text-align:center;font-size:.86rem;display:none}
+  .toast.on{display:block}
+  @media(max-height:670px){.app{padding-top:4px}.task{gap:5px}.task h1{margin-top:5px}
+    .codebox{min-height:155px;max-height:37dvh}.edit-bottom{min-height:120px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="mast">
+    <span class="sigil" aria-hidden="true">///</span><span class="brand">PULSE <b>CODE</b></span>
+    <span class="grow"></span><span class="tag">TS FIRST · UX DEMO</span>
+  </header>
+  <section class="screen active" id="screen-home" aria-label="Коротка сесія">
+    <div class="micro" style="margin-top:30px">НЕ IDE. ОДНА МІКРОСПРАВА.</div>
+    <h1><span class="highlight">90 секунд</span><br>і готово.</h1>
+    <p class="muted" style="margin-top:0">Свіжий контекст замість меню, файлів і п'яти вкладок.</p>
+    <div class="progress" aria-label="Один крок із трьох"><i></i><i></i><i></i></div>
+    <div class="card task">
+      <div class="task-head"><span class="chip ts">TS</span><span class="muted small">gotable / feat/luna</span><span class="grow"></span><span class="time">~90 с</span></div>
+      <strong>Прибрати помилку типів у <span class="highlight">calculateLoss()</span></strong>
+      <p class="muted small" style="margin:0">Поле <code>best?: number | null</code>. Ти вже був на цьому місці. Одне виправлення, один diff.</p>
+      <div class="state-line"><span class="dot"></span><span id="home-status">Останній контекст збережено</span></div>
+    </div>
+    <div class="hintbox">Система не пропонує випадкову задачу: тільки конкретний незавершений контекст, який можна завершити за короткий сеанс.</div>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="big primary" id="resume">▶ Продовжити правку</button>
+      <button class="big secondary" id="postpone">◷ Відкласти</button>
+      <p class="fine">Прототип: справжній сервер і Git не змінюються.</p>
+    </div>
+  </section>
+  <section class="screen" id="screen-editor" aria-label="Редагування TypeScript">
+    <div class="editor-top">
+      <button class="tiny-nav" id="editor-back" aria-label="Назад до мікросесії">‹</button>
+      <span class="editor-title">calculateLoss() <span class="chip ts">TS</span></span>
+      <button class="tiny-nav" id="to-review" aria-label="Переглянути зміну">✓</button>
+    </div>
+    <p class="editor-sub"><strong>luna-review.ts</strong> · рядок 123 · <span id="diagnostic-count">1 TS-помилка</span></p>
+    <div class="codebox"><pre aria-label="TypeScript код"><code id="ts-code"></code></pre></div>
+    <p class="diagnostic" id="ts-diagnostic" role="status">TS18049: <code>s.best</code> може бути null або undefined.</p>
+    <div class="spacer"></div>
+    <div class="edit-bottom" id="edit-bottom">
+      <div class="wheel-copy"><strong>Тримай → веди → відпусти</strong>
+        4 великі сектори. Один жест замість серії точних тапів.<br>
+        <span class="muted small">Звичайний тап відкриває список.</span>
+      </div>
+      <button class="wheel-button" id="gesture-pad" aria-label="Жестове колесо TypeScript. Утримати й провести або натиснути для меню">◎</button>
+    </div>
+    <button class="big secondary" id="pause-edit" style="margin-top:8px">◷ Пауза · чернетка локально</button>
+  </section>
+  <section class="screen" id="screen-review" aria-label="Перевірка однієї зміни">
+    <div class="editor-top"><button class="tiny-nav" id="review-back" aria-label="Повернутися до редактора">‹</button>
+      <span class="editor-title">Одна зміна</span><span class="chip ts">TS</span></div>
+    <h1>Перевір.<br><span class="highlight">Закрий сесію.</span></h1>
+    <div class="overview">
+      <div class="state-line" style="margin-top:0"><span class="chip ts">TS</span> luna-review.ts · <span id="change-count">0 змін</span></div>
+      <div class="change del"><b>−</b><span id="old-line">return s.best - s.current;</span></div>
+      <div class="change add"><b>+</b><span id="new-line">Поки без змін</span></div>
+    </div>
+    <div class="foot-status"><span class="dot"></span> <span id="review-status">Чернетка локально · VPS без змін</span></div>
+    <div class="hintbox">У фінальному продукті запис на VPS порівнює версію файла і повертає конфлікт без втрати локальної копії. У цьому демо запису немає.</div>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="big primary" id="server-save">↑ Зберегти на VPS <span style="font-size:.7rem">(демо)</span></button>
+      <button class="big secondary" id="review-postpone">◷ Відкласти без втрати</button>
+    </div>
+  </section>
+</main>
+<div id="wheel" aria-hidden="true">
+  <svg viewBox="0 0 248 248" role="presentation" id="wheel-svg"></svg>
+  <span class="wheel-word l0">Rename</span><span class="wheel-word l1">Fix</span>
+  <span class="wheel-word l2">Перейти</span><span class="wheel-word l3">Імпорт</span>
+  <div class="wheel-center" id="wheel-center">веди<br>й відпусти</div>
+</div>
+<div class="sheet-back" id="sheet-back" role="presentation">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet">
+    <div class="sheet-grip"></div><button type="button" class="close" id="sheet-close" aria-label="Закрити панель">✕ Закрити</button>
+    <h2 id="sheet-title">Дії з TypeScript</h2>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="pulse-code-demo.js" defer></script>
+</body>
+</html>

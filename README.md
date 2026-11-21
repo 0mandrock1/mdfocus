@@ -177,3 +177,7 @@ WantedBy=multi-user.target
 ## Image demo (2026-11-21)
 
 Open `/mdfocus/?url=https://tools.mandrock.me/mdfocus/demo-images.md` or tap “Демо зображень” in the source panel. Images are rendered as standard Markdown images; remote relative URLs resolve against the source Markdown URL. Tap, Enter or Space opens an accessible full-screen dialog. Escape, backdrop tap or the close control dismisses it. Three SVG screens are generated reproducibly with `python3 demo/make-screens.py`.
+
+### PULSE CODE micro-session demonstrator
+
+`pulse-code-demo.html` + `pulse-code-demo.js` are a **standalone, non-destructive UX demo**, not a filesystem or Git editor. It demonstrates a TypeScript-oriented micro-session, a 4-sector ring with a 52px inscribed target, pointer-up fallback, keyboard-accessible action sheet, an optional left-handed thumb dock, localStorage draft and review state. See `docs/pulse-code-product-brief.md` and the three generated screenshots from `python3 demo/make-micro-screens.py`. Link preview: `demo/make-pulse-og.py`.
