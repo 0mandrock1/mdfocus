@@ -110,6 +110,7 @@
     background:var(--card);border:2px solid var(--page-accent);display:grid;place-content:center;text-align:center;font-size:.69rem;
     padding:9px;color:var(--muted-foreground)}
   #screen-editor.wheeling .codebox{opacity:.75}
+  #screen-editor.wheeling .wheel-copy{visibility:hidden}
   .sheet-back{position:fixed;inset:0;z-index:40;background:color-mix(in oklch,var(--background) 76%,transparent);
     display:none;align-items:flex-end;justify-content:center}
   .sheet-back.on{display:flex}
@@ -124,7 +125,7 @@
   .sheet button.close{float:right;min-height:48px;min-width:70px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
   .sheet button.commit{margin-top:10px;min-height:60px;border:1px solid var(--accent-lime);
     border-radius:14px;width:100%;background:var(--accent-lime);color:var(--background);font-weight:900}
-  .toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 20px);
+  .toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 65px);pointer-events:none;
     max-width:min(94vw,440px);border:1px solid var(--page-accent);background:var(--card);padding:13px 15px;border-radius:13px;
     text-align:center;font-size:.86rem;display:none}
   .toast.on{display:block}
