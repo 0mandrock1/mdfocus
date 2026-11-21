@@ -9,7 +9,7 @@ const vm = require('node:vm');
 // Exercise the functions that the browser executes, without a DOM dependency.
 const source = fs.readFileSync(path.join(__dirname, '../web/app.js'), 'utf8');
 const start = source.indexOf('  // ---------------------------------------------------------------- URL autolinks');
-const end = source.indexOf('  // ---------------------------------------------------------------- render', start);
+const end = source.indexOf('  // ----------------------------------------------------------- image viewer', start);
 assert.ok(start > 0 && end > start, 'autolink code found');
 
 const document = {

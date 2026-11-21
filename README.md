@@ -173,3 +173,7 @@ WantedBy=multi-user.target
   earlier versions restore by scroll offset.
 - Reader switches and positions are stored in browser localStorage. Audio never
   starts without a click. None of these values are sent to the server.
+
+## Image demo (2026-11-21)
+
+Open `/mdfocus/?url=https://tools.mandrock.me/mdfocus/demo-images.md` or tap “Демо зображень” in the source panel. Images are rendered as standard Markdown images; remote relative URLs resolve against the source Markdown URL. Tap, Enter or Space opens an accessible full-screen dialog. Escape, backdrop tap or the close control dismisses it. Three SVG screens are generated reproducibly with `python3 demo/make-screens.py`.

@@ -82,7 +82,7 @@
         });
       })
       .then(function (text) {
-        if (request === sourceRequest) loadMarkdown(text);
+        if (request === sourceRequest) loadMarkdown(text, url);
       })
       .catch(function (e) {
         if (request === sourceRequest) setStatus('помилка завантаження: ' + e.message, true);
@@ -177,8 +177,66 @@
     });
   }
 
+  // ----------------------------------------------------------- image viewer
+  var imageViewer = document.getElementById('mdfocus-image-viewer');
+  var imageViewerImg = document.getElementById('mdfocus-image-full');
+  var imageViewerLabel = document.getElementById('mdfocus-image-label');
+  var imageViewerSource = document.getElementById('mdfocus-image-source');
+  var lastImageTrigger = null;
+
+  function enhanceImages(root, sourceUrl) {
+    root.querySelectorAll('img').forEach(function (img) {
+      var src = img.getAttribute('src');
+      if (!src) return;
+      try {
+        var absolute = new URL(src, sourceUrl || document.baseURI);
+        if (absolute.protocol !== 'https:' && absolute.protocol !== 'http:') return;
+        img.src = absolute.href;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.tabIndex = 0;
+        img.setAttribute('role', 'button');
+        img.setAttribute('aria-label', 'Збільшити зображення: ' + (img.alt || 'без назви'));
+        img.classList.add('mdfocus-zoomable');
+      } catch (e) { /* Malformed or unsupported image source is not zoomable. */ }
+    });
+  }
+
+  function showImage(img) {
+    if (!imageViewer || !img || !img.classList.contains('mdfocus-zoomable')) return;
+    lastImageTrigger = img;
+    imageViewerImg.src = img.src;
+    imageViewerImg.alt = img.alt || '';
+    imageViewerLabel.textContent = img.alt || 'Зображення';
+    imageViewerSource.href = img.src;
+    imageViewer.showModal();
+  }
+
+  article.addEventListener('click', function (event) {
+    var img = event.target.closest('img.mdfocus-zoomable');
+    if (img && article.contains(img)) {
+      event.preventDefault();
+      showImage(img);
+    }
+  });
+  article.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (!event.target.matches('img.mdfocus-zoomable')) return;
+    event.preventDefault();
+    showImage(event.target);
+  });
+  imageViewer.addEventListener('click', function (event) {
+    if (event.target === imageViewer) imageViewer.close();
+  });
+  imageViewer.querySelector('[data-close]').addEventListener('click', function () { imageViewer.close(); });
+  imageViewer.addEventListener('close', function () {
+    imageViewerImg.removeAttribute('src');
+    if (lastImageTrigger && lastImageTrigger.isConnected) lastImageTrigger.focus({ preventScroll: true });
+    lastImageTrigger = null;
+  });
+
   // ---------------------------------------------------------------- render
-  function loadMarkdown(raw) {
+  function loadMarkdown(raw, sourceUrl) {
     if (typeof marked === 'undefined') {
       setStatus('marked.js ще не завантажився, спробуй ще раз за секунду', true);
       return;
@@ -187,6 +245,7 @@
     teardownLineFocus();
     teardownTables();
     article.innerHTML = marked.parse(raw);
+    enhanceImages(article, sourceUrl);
     linkifyTextUrls(article);
     var tables = wrapTables(article);
     var parts = buildSections(article);

@@ -71,7 +71,22 @@
   article#article h1, article#article h2, article#article h3{font-weight:700; line-height:1.3;}
   article#article p{line-height:1.65; font-size:1rem;}
   article#article{overflow-wrap:anywhere;}
-  article#article img{max-width:100%; height:auto;}
+  article#article img{display:block; max-width:100%; height:auto; margin:1.2em auto; border:1px solid var(--border); border-radius:var(--radius); box-shadow:0 6px 30px color-mix(in oklch,var(--background) 55%,transparent);}
+  article#article img.mdfocus-zoomable{cursor:zoom-in;}
+  article#article img.mdfocus-zoomable:focus-visible{outline:3px solid var(--page-accent); outline-offset:4px;}
+  .mdfocus-demo-link{display:inline-flex; min-height:44px; align-items:center; color:var(--page-accent); margin-top:8px; font-weight:700;}
+  .mdfocus-image-viewer{position:fixed; inset:0; width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; padding:0;
+    border:0; background:var(--background); color:var(--foreground); overflow:hidden;}
+  .mdfocus-image-viewer::backdrop{background:color-mix(in oklch,var(--background) 88%,transparent);}
+  .mdfocus-image-viewer:not([open]){display:none;}
+  .mdfocus-image-shell{height:100%; display:flex; flex-direction:column; padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom)); box-sizing:border-box;}
+  .mdfocus-image-bar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-height:44px;}
+  .mdfocus-image-bar output{flex:1; min-width:0; overflow-wrap:anywhere; font-size:.84rem;}
+  .mdfocus-image-bar a{color:var(--page-accent); font-size:.82rem;}
+  .mdfocus-image-bar button{min-width:44px; min-height:44px; background:var(--card); border:1px solid var(--border); color:var(--foreground); border-radius:var(--radius); font-size:1.2rem;}
+  .mdfocus-image-full-wrap{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:auto;}
+  .mdfocus-image-full-wrap img{display:block; max-width:100%; max-height:100%; object-fit:contain; user-select:none;}
+  @media(prefers-reduced-motion:reduce){.mdfocus-zoomable,.mdfocus-image-viewer{scroll-behavior:auto;}}
   .mdfocus-section{display:flow-root;}
   .mdfocus-section[hidden]{display:none;}
   #article:focus,.mdfocus-section:focus,.mdfocus-section :is(h1,h2,h3,h4,h5,h6):focus{outline:none;}
@@ -347,10 +362,21 @@
         <button type="button" class="btn" id="url-load-btn">Завантажити</button>
       </div>
     </div>
+    <a class="mdfocus-demo-link" href="?url=https%3A%2F%2Ftools.mandrock.me%2Fmdfocus%2Fdemo-images.md">▧ Демо зображень · 3 екрани</a>
     <div class="status-line" id="status-line"></div>
   </div>
 
   <article id="article" tabindex="-1"></article>
+  <dialog class="mdfocus-image-viewer" id="mdfocus-image-viewer" aria-label="Перегляд зображення">
+    <div class="mdfocus-image-shell">
+      <div class="mdfocus-image-bar">
+        <output id="mdfocus-image-label"></output>
+        <a id="mdfocus-image-source" target="_blank" rel="noopener noreferrer">Оригінал</a>
+        <button type="button" data-close aria-label="Закрити зображення">✕</button>
+      </div>
+      <div class="mdfocus-image-full-wrap"><img id="mdfocus-image-full" alt=""></div>
+    </div>
+  </dialog>
 
   <div class="reset-row" id="reset-row" style="display:none;">
     <button type="button" class="btn" id="reset-btn">← нове джерело</button>
@@ -359,6 +385,6 @@
   <footer>Налаштування й позиція читання зберігаються в цьому браузері.</footer>
 </div>
 <script src="interactions.js?v=reader-interactions-2" defer></script>
-<script src="app.js?v=reader-interactions-1" defer></script>
+<script src="app.js?v=mdfocus-image-demo-1" defer></script>
 </body>
 </html>

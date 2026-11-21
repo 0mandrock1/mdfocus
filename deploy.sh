@@ -30,7 +30,7 @@ deploy_file() {
 }
 
 web_changed=0
-for f in interactions.js app.js og.png index.html; do
+for f in interactions.js app.js og.png index.html demo-images.md demo-editor.svg demo-projects.svg demo-diff.svg; do
     if ! deploy_file "$WEB_SRC_DIR/$f" "$WEB_DST_DIR/$f"; then
         web_changed=1
     fi
