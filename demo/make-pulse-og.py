@@ -11,9 +11,9 @@ for y in range(0,630,60):
     d.line((0,y,1200,y),fill='#280e2b',width=1)
 d.rounded_rectangle((38,44,1163,591),30,fill='#200d23',outline='#a53eac',width=3)
 d.text((80,85),'/// PULSE CODE',font=ImageFont.truetype(big,56),fill='#ed7aff')
-d.text((80,206),'90 секунд.',font=ImageFont.truetype(big,70),fill='#caff49')
-d.text((80,306),'TypeScript одним пальцем',font=ImageFont.truetype(big,31),fill='#fff3ff')
-d.text((80,399),'Мікросесія  /  Modwheel  /  Diff',font=ImageFont.truetype(med,22),fill='#91ebfa')
+d.text((80,206),'TypeScript / модвіл',font=ImageFont.truetype(big,70),fill='#caff49')
+d.text((80,306),'Рівень 1 / Рівень 2 / Таблиця',font=ImageFont.truetype(big,31),fill='#fff3ff')
+d.text((80,399),'Великий палець  /  великі плитки  /  Undo',font=ImageFont.truetype(med,22),fill='#91ebfa')
 d.text((80,511),'НЕ IDE В МІНІАТЮРІ',font=ImageFont.truetype(big,19),fill='#c9a4c9')
 for i,label in enumerate(('01','02','03')):
     x=775+i*127

@@ -181,3 +181,10 @@ Open `/mdfocus/?url=https://tools.mandrock.me/mdfocus/demo-images.md` or tap “
 ### PULSE CODE micro-session demonstrator
 
 `pulse-code-demo.html` + `pulse-code-demo.js` are a **standalone, non-destructive UX demo**, not a filesystem or Git editor. It demonstrates a TypeScript-oriented micro-session, a 4-sector ring with a 52px inscribed target, pointer-up fallback, keyboard-accessible action sheet, an optional left-handed thumb dock, localStorage draft and review state. See `docs/pulse-code-product-brief.md` and the three generated screenshots from `python3 demo/make-micro-screens.py`. Link preview: `demo/make-pulse-og.py`.
+
+
+### PULSE CODE grammar wheel v3 (2026-11-21)
+
+Standalone browser UX demonstrator at `/mdfocus/pulse-code-demo.html`. Not a TS IDE. Supports two consecutive radial levels (four 90-degree 52px-diameter sectors each), dwell-to-descend with movement guard, tap-based accessible fallback, then a full-screen searchable option grid. Changes are composed locally in separate structure/value/type slots and optional text, with undo/history, checkpoints and reload restore. **No network write API or tsserver.**
+
+Spec: `docs/pulse-code-product-brief.md`. Automated Chromium mobile smoke test: `node demo/qa-grammar.cjs`; regenerate actual UI images: `node demo/snapshot-grammar.cjs`. Gallery source: `web/demo-images.md`.

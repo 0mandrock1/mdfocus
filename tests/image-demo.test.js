@@ -2,20 +2,17 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const md = fs.readFileSync(path.join(root, 'web/demo-images.md'), 'utf8');
-const imageNames = ['pulse-session.svg', 'pulse-wheel.svg', 'pulse-review.svg'];
+const imageNames = ['pulse-v3-home.png', 'pulse-v3-wheel.png', 'pulse-v3-grid.png'];
 
-test('each concept image is linked and remains valid SVG', () => {
+test('each UX screenshot is linked and remains valid PNG', () => {
   for (const name of imageNames) {
     assert.ok(md.includes(`](./${name})`), `missing link: ${name}`);
-    const svg = fs.readFileSync(path.join(root, 'web', name), 'utf8');
-    assert.match(svg, /viewBox="0 0 390 844"/);
-    assert.doesNotMatch(svg, /<script|onload=|<foreignObject/i);
-    const r = spawnSync('python3', ['-c', 'import xml.etree.ElementTree as E,sys;E.parse(sys.argv[1])',path.join(root,'web',name)], { encoding:'utf8' });
-    assert.equal(r.status, 0, r.stderr);
+    const svg = fs.readFileSync(path.join(root, 'web', name));
+    assert.equal(svg.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.ok(svg.length>20000);
   }
 });
 

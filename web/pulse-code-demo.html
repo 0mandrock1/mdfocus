@@ -3,238 +3,257 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>PULSE CODE · 90 секунд на TypeScript · інтерактивний UX-прототип</title>
-<meta name="description" content="PULSE CODE: концепт мобільного TypeScript-редактора для коротких сесій. Велика зона дії, жестове колесо, безпечний diff. Інтерактивний прототип, без запису на VPS.">
-<meta property="og:type" content="website">
-<meta property="og:title" content="PULSE CODE · TypeScript одним пальцем">
-<meta property="og:description" content="90 секунд · структурні TS-дії · колесо під великим пальцем · одна зміна">
+<meta name="description" content="PULSE CODE: інтерактивний мобільний TypeScript-конструктор із дворівневим радіальним меню та повноекранною таблицею вибору. UX-демо без серверного запису.">
+<title>PULSE CODE · TypeScript з великим пальцем</title>
+<meta property="og:type" content="website"><meta property="og:title" content="PULSE CODE · TypeScript-конструктор на телефоні">
+<meta property="og:description" content="Жест → група → підгрупа → повноекранна таблиця. Конструюй код по кроках, без примусових мікрозадач.">
 <meta property="og:url" content="https://tools.mandrock.me/mdfocus/pulse-code-demo.html">
 <meta property="og:image" content="https://tools.mandrock.me/mdfocus/pulse-code-og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PULSE CODE · TypeScript одним пальцем">
-<meta name="twitter:image" content="https://tools.mandrock.me/mdfocus/pulse-code-og.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://tools.mandrock.me/mdfocus/pulse-code-og.png">
 <link rel="stylesheet" href="https://files.mandrock.me/web/mandrock0-tokens.css">
 <link rel="stylesheet" href="https://tools.mandrock.me/palettes/accents.css">
 <script src="https://files.mandrock.me/web/mandrock0-ambient.js" data-profile="subtle" data-section="purple" defer></script>
 <style>
-  *{box-sizing:border-box}
-  :root{color-scheme:dark}
-  html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
-  body{background:var(--background);color:var(--foreground);overscroll-behavior-y:contain}
-  button,input{font:inherit}
-  button{color:inherit;cursor:pointer;touch-action:manipulation}
-  button:focus-visible,input:focus-visible{outline:3px solid var(--page-accent);outline-offset:3px}
-  canvas[data-mandrock0-ambient]{z-index:0!important;opacity:.08!important;pointer-events:none!important}
-  .app{position:relative;z-index:1;width:100%;max-width:480px;min-height:100dvh;margin:auto;
-    display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 9px) 14px calc(env(safe-area-inset-bottom) + 14px)}
-  .mast{display:flex;align-items:center;gap:10px;min-height:50px}
-  .sigil{font-weight:900;font-size:1.5rem;color:var(--page-accent);letter-spacing:-.15em;transform:skew(-13deg)}
-  .brand{font-weight:900;letter-spacing:.06em;font-size:1.05rem}
-  .brand b{color:var(--page-accent)}
-  .grow{flex:1}
-  .tag{font-size:.71rem;border:1px solid var(--border);padding:7px 10px;border-radius:999px;
-    background:var(--card);color:var(--muted-foreground)}
-  .tiny-nav{min-width:48px;min-height:48px;background:var(--card);border:1px solid var(--border);border-radius:13px}
-  .screen{display:none;flex-direction:column;flex:1;min-height:0}
-  .screen.active{display:flex}
-  .micro{font-size:.74rem;font-weight:800;letter-spacing:.11em;color:var(--page-accent)}
-  h1{font-size:clamp(1.75rem,8vw,2.7rem);line-height:1.03;margin:18px 0 12px;letter-spacing:-.045em}
-  h2{font-size:1.45rem;margin:13px 0}
-  p{line-height:1.5}
-  .muted{color:var(--muted-foreground)}
-  .muted.small{font-size:.82rem}
-  .highlight{color:var(--accent-lime)}
-  .progress{display:flex;gap:7px;margin:18px 0 12px}
-  .progress i{height:5px;border-radius:10px;flex:1;background:var(--border)}
-  .progress i:first-child{background:var(--accent-lime)}
-  .card{background:color-mix(in oklch,var(--card) 90%,transparent);border:1px solid var(--border);border-radius:18px;padding:18px}
-  .task{display:grid;gap:9px;margin-top:12px}
-  .task-head{display:flex;gap:8px;align-items:center}
-  .task strong{display:block;font-size:clamp(1.23rem,5.5vw,1.55rem);line-height:1.22;overflow-wrap:anywhere}
-  .time{background:var(--accent-lime);color:var(--background);font-weight:900;border-radius:999px;padding:8px 12px;white-space:nowrap;font-size:.76rem}
-  .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);background:var(--card);
-    padding:8px 10px;border-radius:10px;font-size:.75rem}
-  .chip.ts{font-weight:900;color:var(--accent-cyan);letter-spacing:.05em}
-  .state-line{margin-top:12px;font-size:.78rem;display:flex;gap:9px;align-items:center}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent-lime)}
-  .spacer{flex:1;min-height:12px}
-  .actions{display:grid;gap:12px;padding-top:16px}
-  .big{width:100%;min-height:64px;border:1px solid var(--border);border-radius:17px;
-    padding:14px 17px;font-size:1.07rem;font-weight:850;display:flex;justify-content:center;align-items:center;gap:9px}
-  .big.primary{background:var(--accent-lime);border-color:var(--accent-lime);color:var(--background)}
-  .big.secondary{background:var(--card)}
-  .big:disabled{opacity:.5;cursor:default}
-  .fine{font-size:.7rem;color:var(--muted-foreground);text-align:center;margin:5px 0 0}
-  .hintbox{font-size:.77rem;color:var(--muted-foreground);border-left:3px solid var(--accent-cyan);padding-left:12px;margin-top:12px}
-  .editor-top{display:flex;gap:10px;align-items:center;min-height:54px}
-  .editor-title{font-weight:800;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .editor-sub{font-size:.74rem;color:var(--muted-foreground);margin:2px 0 12px}
-  .editor-sub strong{color:var(--accent-lime)}
-  .codebox{min-height:230px;flex:1;max-height:54dvh;overflow:auto;background:color-mix(in oklch,var(--background) 87%,var(--card));
-    border:1px solid var(--border);border-radius:14px;position:relative;padding:17px 12px}
-  .codebox pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;font-size:clamp(12px,3.45vw,15px);line-height:1.85;
-    color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-  .codebox .selected{background:color-mix(in oklch,var(--accent-purple) 24%,transparent);
-    border:1px solid var(--accent-purple);border-radius:6px;padding:3px 5px}
-  .codebox .problem{color:var(--accent-crimson);border-bottom:2px wavy var(--accent-crimson)}
-  .diagnostic{font-size:.79rem;line-height:1.5;color:var(--accent-cyan);margin:11px 2px}
-  .edit-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;
-    min-height:150px;padding:20px 0 5px}
-  .wheel-copy{font-size:.81rem;line-height:1.55;max-width:49%;color:var(--muted-foreground)}
-  .wheel-copy strong{display:block;color:var(--foreground);font-size:1.05rem}
-  .wheel-button{position:relative;border:2px solid var(--page-accent);border-radius:50%;width:84px;height:84px;
-    background:var(--card);box-shadow:0 0 32px color-mix(in oklch,var(--page-accent) 28%,transparent);
-    color:var(--foreground);font-size:1.25rem;font-weight:900;touch-action:none;user-select:none;flex-shrink:0;margin-right:62px}
-  .wheel-button:active{background:var(--secondary)}
-  .edit-bottom.left{flex-direction:row-reverse}
-  .edit-bottom.left .wheel-button{margin-right:0;margin-left:62px}
-  .overview{border:1px solid var(--border);border-radius:16px;padding:14px;margin-top:12px}
-  .change{display:flex;gap:12px;align-items:center;font-size:.79rem;font-family:ui-monospace,monospace;
-    white-space:pre-wrap;word-break:break-word;padding:13px 11px;margin:7px 0;border-radius:9px;line-height:1.5}
-  .change.del{color:var(--accent-crimson);background:color-mix(in oklch,var(--accent-crimson) 10%,var(--card))}
-  .change.add{color:var(--accent-lime);background:color-mix(in oklch,var(--accent-lime) 10%,var(--card))}
-  .change span{flex:1}
-  .foot-status{margin-top:10px;font-size:.85rem;padding:13px;background:var(--card);border-radius:12px}
-  #wheel{display:none;position:fixed;z-index:30;width:248px;height:248px;pointer-events:none;transform:translate(-50%,-50%);
-    filter:drop-shadow(0 0 25px color-mix(in oklch,var(--page-accent) 25%,transparent))}
-  #wheel.on{display:block}
-  #wheel svg{width:248px;height:248px;overflow:visible}
-  .wedge{stroke:var(--background);stroke-width:4}
-  .wedge.hit{stroke:var(--accent-lime);stroke-width:5;filter:brightness(1.35)}
-  .wheel-word{position:absolute;pointer-events:none;font-size:.8rem;font-weight:850;text-align:center;color:var(--foreground);
-    width:74px;transform:translate(-50%,-50%);text-shadow:0 1px 5px var(--background)}
-  .wheel-word.l0{left:25%;top:25%}.wheel-word.l1{left:75%;top:25%}
-  .wheel-word.l2{left:75%;top:75%}.wheel-word.l3{left:25%;top:75%}
-  .wheel-center{position:absolute;width:104px;height:104px;left:72px;top:72px;border-radius:50%;
-    background:var(--card);border:2px solid var(--page-accent);display:grid;place-content:center;text-align:center;font-size:.69rem;
-    padding:9px;color:var(--muted-foreground)}
-  #screen-editor.wheeling .codebox{opacity:.75}
-  #screen-editor.wheeling .wheel-copy{visibility:hidden}
-  .sheet-back{position:fixed;inset:0;z-index:40;background:color-mix(in oklch,var(--background) 76%,transparent);
-    display:none;align-items:flex-end;justify-content:center}
-  .sheet-back.on{display:flex}
-  .sheet{width:min(480px,100vw);background:var(--card);border:1px solid var(--border);
-    border-radius:22px 22px 0 0;padding:17px 15px calc(env(safe-area-inset-bottom) + 20px);max-height:90dvh;overflow:auto}
-  .sheet-grip{width:55px;height:5px;background:var(--muted-foreground);border-radius:10px;margin:0 auto 14px;opacity:.6}
-  .sheet h2{margin:8px 0 14px}
-  .sheet button.option{width:100%;min-height:58px;border:1px solid var(--border);border-radius:14px;
-    background:var(--secondary);font-size:1rem;text-align:left;padding:12px 16px;margin:5px 0}
-  .sheet input{width:100%;min-height:56px;border-radius:14px;background:var(--background);
-    border:1px solid var(--page-accent);color:var(--foreground);padding:12px;font-family:ui-monospace,monospace}
-  .sheet button.close{float:right;min-height:48px;min-width:70px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
-  .sheet button.commit{margin-top:10px;min-height:60px;border:1px solid var(--accent-lime);
-    border-radius:14px;width:100%;background:var(--accent-lime);color:var(--background);font-weight:900}
-  .toast{position:fixed;z-index:50;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 65px);pointer-events:none;
-    max-width:min(94vw,440px);border:1px solid var(--page-accent);background:var(--card);padding:13px 15px;border-radius:13px;
-    text-align:center;font-size:.86rem;display:none}
-  .toast.on{display:block}
-  @media(max-height:670px){
-    .app{padding-top:4px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
-    #screen-home .micro{margin-top:8px!important}
-    #screen-home h1{font-size:1.9rem;line-height:1.06;margin:9px 0 6px}
-    #screen-home > p.muted,#screen-home .progress,#screen-home .hintbox,#screen-home .fine{display:none}
-    #screen-home .task{gap:5px;margin-top:12px;padding:12px}
-    #screen-home .task strong{font-size:1.17rem;line-height:1.16}
-    #screen-home .task .muted.small{font-size:.72rem;line-height:1.32}
-    #screen-home .state-line{margin-top:4px}
-    #screen-home .actions{padding-top:7px;gap:8px}
-    .big{min-height:55px;font-size:.96rem}
-    .codebox{min-height:130px;max-height:29dvh;padding:10px 9px}
-    .codebox pre{font-size:12px;line-height:1.55}
-    #screen-editor .diagnostic{font-size:.73rem;margin:6px 2px}
-    #screen-editor > .spacer{min-height:0}
-    .edit-bottom{min-height:95px;padding:3px 0 0;margin-bottom:72px}
-    .wheel-copy{font-size:.7rem;line-height:1.36}
-    .wheel-copy strong{font-size:.85rem}
-    .wheel-copy .muted{display:none}
-    #pause-edit{display:none}
-    #screen-review h1{font-size:1.9rem;margin:4px 0}
-    #screen-review .overview{margin-top:6px;padding:9px}
-    #screen-review .change{font-size:.7rem;padding:6px;margin:4px 0}
-    #screen-review .foot-status{margin-top:5px;padding:8px;font-size:.74rem}
-    #screen-review .hintbox{display:none}
-    #screen-review .actions{gap:8px;padding-top:5px}
-  }
-  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,sans-serif}
+body{background:var(--background);color:var(--foreground);overflow-x:hidden}
+canvas[data-mandrock0-ambient]{z-index:0!important;opacity:.08!important;pointer-events:none!important}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--page-accent);outline-offset:3px}
+[hidden]{display:none!important}
+.app{position:relative;z-index:1;max-width:500px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;
+padding:calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 14px)}
+.mast{display:flex;gap:10px;align-items:center;min-height:48px}
+.logo{font-size:1.5rem;font-weight:900;color:var(--page-accent);letter-spacing:-.15em;transform:skew(-13deg)}
+.brand{font-weight:900;letter-spacing:.055em;font-size:1.08rem}.brand span{color:var(--page-accent)}
+.flex{flex:1}.micro{font-size:.73rem;font-weight:800;color:var(--page-accent);letter-spacing:.1em}
+.pill{border:1px solid var(--border);border-radius:999px;background:var(--card);padding:8px 11px;font-size:.75rem}
+.screen{display:none;flex:1;min-height:0;flex-direction:column}
+.screen.active{display:flex}
+h1{font-size:clamp(1.8rem,7vw,2.6rem);line-height:1.08;letter-spacing:-.035em;margin:19px 0 12px}
+h2{font-size:1.45rem;margin:9px 0}.muted{color:var(--muted-foreground)}.small{font-size:.81rem}
+.accent{color:var(--accent-lime)}
+button.big{width:100%;min-height:62px;background:var(--card);border:1px solid var(--border);border-radius:16px;
+display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;font-weight:800;font-size:1.02rem}
+button.big.main{background:var(--accent-lime);color:var(--background);border-color:var(--accent-lime)}
+button.big:disabled{opacity:.45}
+.stack{display:grid;gap:12px}.grow{flex:1;min-height:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:17px;margin-top:12px}
+.card-title{display:flex;gap:9px;align-items:center;font-size:.94rem;font-weight:750}
+.codeword{font-family:ui-monospace,Consolas,monospace;color:var(--accent-cyan)}
+.tspill{background:var(--secondary);border-radius:9px;padding:8px 9px;color:var(--accent-cyan);font-weight:900;font-size:.78rem}
+.card p{margin:10px 0;line-height:1.45}
+.state{font-size:.8rem;color:var(--muted-foreground);margin-top:10px}
+.state::before{content:'●';color:var(--accent-lime);margin-right:7px}
+.card-small{padding:13px 16px;margin-top:10px}
+.choose{width:100%;border:1px solid var(--border);border-radius:15px;background:var(--card);padding:15px;
+min-height:62px;text-align:left;display:flex;gap:13px;align-items:center;font-weight:750}
+.choose .symbol{font-size:1.35rem;color:var(--page-accent)}
+.note{padding-left:12px;border-left:3px solid var(--accent-cyan);font-size:.81rem;line-height:1.45;color:var(--muted-foreground);margin:16px 0}
+.topbar{display:flex;gap:8px;align-items:center;min-height:52px}
+.iconbtn{min-width:50px;min-height:50px;background:var(--card);border:1px solid var(--border);border-radius:13px;font-size:1.27rem}
+.filelabel{font-weight:800;min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.subline{font-size:.77rem;color:var(--muted-foreground);margin:5px 0 12px}
+.codebox{overflow:auto;min-height:190px;flex:1;max-height:45dvh;padding:16px 11px;background:var(--background);
+border:1px solid var(--border);border-radius:15px}
+.codebox pre,.review-code{margin:0;color:var(--foreground);font:clamp(12px,3.2vw,15px)/1.65 ui-monospace,Consolas,monospace;
+white-space:pre-wrap;overflow-wrap:anywhere}
+.compose{margin:10px 0 0;border:1px solid var(--border);background:var(--card);border-radius:12px;padding:11px}
+.compose-title{font-size:.75rem;letter-spacing:.06em;font-weight:800;color:var(--page-accent)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.chip{font:600 .73rem ui-monospace,monospace;padding:9px 10px;border-radius:9px;background:var(--secondary);border:1px solid var(--border)}
+.chip.active{border-color:var(--page-accent);color:var(--accent-lime)}
+.thumbbar{margin-top:auto;display:flex;align-items:center;gap:14px;justify-content:space-between;padding:12px 0 7px}
+.thumbbar.left{flex-direction:row-reverse}
+.thumbtext{flex:1;min-width:0;max-width:50%;font-size:.82rem;line-height:1.45}
+.thumbtext b{display:block;color:var(--foreground)}
+.thumbtext span{color:var(--muted-foreground)}
+.thumbbar .thumbbutton{width:86px;height:86px;flex-shrink:0;margin-right:62px;border-radius:50%;border:2px solid var(--page-accent);
+background:var(--card);box-shadow:0 0 20px color-mix(in oklch,var(--page-accent) 25%,transparent);
+font-size:1.8rem;font-weight:900;touch-action:none;user-select:none}
+.thumbbar.left .thumbbutton{margin-right:0;margin-left:62px}
+.thumbbar .thumbbutton:active{background:var(--secondary)}
+.edit-foot{display:flex;gap:8px}
+.edit-foot button{flex:1;min-height:50px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-size:.82rem;font-weight:750}
+.edit-foot button.primary{background:var(--secondary);border-color:var(--page-accent)}
+#radial{position:fixed;z-index:35;width:248px;height:248px;display:none;transform:translate(-50%,-50%);
+pointer-events:none;user-select:none;filter:drop-shadow(0 0 18px color-mix(in oklch,var(--page-accent) 28%,transparent))}
+#radial.open{display:block}
+#radial svg{width:248px;height:248px}
+.wedge{stroke:var(--background);stroke-width:4}
+.wedge.selected{stroke:var(--accent-lime);stroke-width:5;filter:brightness(1.25)}
+.wheel-label{position:absolute;pointer-events:none;width:84px;transform:translate(-50%,-50%);font-size:.78rem;
+font-weight:800;text-align:center;text-shadow:0 2px 5px var(--background)}
+.wheel-label[data-i="0"]{left:24%;top:24%}
+.wheel-label[data-i="1"]{left:76%;top:24%}
+.wheel-label[data-i="2"]{left:76%;top:76%}
+.wheel-label[data-i="3"]{left:24%;top:76%}
+.wheel-center{position:absolute;left:72px;top:72px;width:104px;height:104px;border-radius:50%;border:2px solid var(--page-accent);
+background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+font-size:.7rem;color:var(--muted-foreground);padding:10px;line-height:1.35}
+.wheel-center b{font-size:.83rem;color:var(--foreground)}
+.overlay{position:fixed;inset:0;z-index:40;background:color-mix(in oklch,var(--background) 80%,transparent);
+display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.sheet{background:var(--card);border:1px solid var(--border);border-radius:24px 24px 0 0;
+padding:16px 15px calc(18px + env(safe-area-inset-bottom));width:min(500px,100%);max-height:92dvh;overflow:auto}
+.sheet-head{display:flex;gap:9px;align-items:center;justify-content:space-between}
+.sheet-head button,.smallbtn{min-height:48px;min-width:48px;background:var(--secondary);border:1px solid var(--border);border-radius:12px}
+.sheet h2{margin:0;font-size:1.24rem}
+.sheet .option{width:100%;min-height:60px;border:1px solid var(--border);background:var(--secondary);border-radius:13px;
+margin-top:8px;text-align:left;padding:12px 15px;font-weight:750}
+.grid-overlay{position:fixed;inset:0;z-index:45;background:var(--background);display:none;overflow-y:auto;overscroll-behavior:contain}
+.grid-overlay.open{display:block}
+.grid-inner{max-width:760px;margin:auto;min-height:100%;padding:calc(12px + env(safe-area-inset-top)) 13px calc(190px + env(safe-area-inset-bottom))}
+.grid-top{position:sticky;top:0;background:var(--background);z-index:2;padding:6px 0 10px}
+.grid-topline{display:flex;gap:8px;align-items:center}
+.grid-topline button{min-height:50px;min-width:50px;border:1px solid var(--border);border-radius:13px;background:var(--card)}
+.grid-topline strong{flex:1;min-width:0;font-size:1.06rem}
+.crumbs{font-size:.78rem;color:var(--accent-cyan);margin:9px 0}
+.grid-top input{width:100%;height:55px;background:var(--card);color:var(--foreground);border:1px solid var(--border);
+border-radius:13px;padding:0 15px;margin:5px 0}
+.grid-help{color:var(--muted-foreground);font-size:.83rem;margin:8px 0 12px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.tile{min-height:101px;border:1px solid var(--border);border-radius:15px;background:var(--card);padding:12px 11px;
+display:flex;flex-direction:column;justify-content:space-between;text-align:left;gap:8px;overflow-wrap:anywhere}
+.tile strong{font-size:1rem;line-height:1.22}
+.tile code{font-size:.73rem;line-height:1.4;color:var(--accent-cyan);white-space:pre-wrap;overflow-wrap:anywhere}
+.tile.sel{border:3px solid var(--accent-lime);padding:10px 9px}
+.grid-footer{position:fixed;bottom:0;left:0;right:0;z-index:4;padding:12px max(13px, env(safe-area-inset-left)) calc(15px + env(safe-area-inset-bottom));
+background:var(--card);border-top:1px solid var(--border)}
+.grid-footer .footer-inner{max-width:760px;margin:auto}
+.preview{font-size:.84rem;color:var(--muted-foreground);margin:0 0 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid-footer button{width:100%;min-height:61px;border:1px solid var(--accent-lime);background:var(--accent-lime);
+color:var(--background);border-radius:14px;font-weight:900;font-size:1rem}
+.grid-footer button:disabled{opacity:.4}
+.diff{font:clamp(12px,3.2vw,14px)/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;
+background:var(--card);border:1px solid var(--border);padding:12px;border-radius:14px;max-height:49dvh;overflow:auto}
+.diff .plus{color:var(--accent-lime)}.diff .minus{color:var(--accent-crimson)}
+.toast{position:fixed;left:50%;top:calc(65px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;
+display:none;pointer-events:none;border:1px solid var(--page-accent);border-radius:13px;padding:10px 13px;
+background:var(--card);font-size:.79rem;max-width:90vw;text-align:center}
+.toast.open{display:block}
+@media(min-width:560px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-height:690px){
+ .app{padding-top:5px;padding-bottom:max(5px,env(safe-area-inset-bottom))}
+ h1{font-size:1.9rem;margin:10px 0}
+ #screen-home .micro{margin-top:6px!important;font-size:.67rem}
+ #screen-home h1{font-size:1.5rem;line-height:1.035;margin:5px 0}
+ #screen-home > p.muted{display:none}
+ #screen-home .note{display:none}
+ #screen-home .card{padding:9px;margin-top:5px}
+ #screen-home .card p{font-size:.94rem!important;margin:4px 0}
+ #screen-home .card-title{font-size:.77rem}
+ #screen-home .card .state{font-size:.72rem;margin-top:5px}
+ #screen-home .tspill{padding:5px 7px}
+ #screen-home .stack{gap:6px;margin-bottom:18px}
+ #screen-home .choose{min-height:49px;padding:7px 10px;font-size:.9rem}
+ #screen-home .big{min-height:49px}
+ .codebox{min-height:120px;max-height:27dvh;padding:9px}
+ .codebox pre{font-size:12px;line-height:1.47}
+ .compose{padding:8px;margin-top:6px}
+ .thumbbar{padding:6px 0 5px}
+ .thumbtext{font-size:.74rem;line-height:1.3}
+ .thumbbar .thumbbutton{width:78px;height:78px;margin-bottom:50px}
+ .edit-foot button{min-height:43px}
+ #screen-review h1{margin:9px 0}
+ #screen-review .diff{max-height:35dvh}
+ #screen-review .note{display:none}
+ .grid-inner{padding-bottom:175px}
+ .tile{min-height:92px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <main class="app">
-  <header class="mast">
-    <span class="sigil" aria-hidden="true">///</span><span class="brand">PULSE <b>CODE</b></span>
-    <span class="grow"></span><span class="tag">TS FIRST · UX DEMO</span>
-  </header>
-  <section class="screen active" id="screen-home" aria-label="Коротка сесія">
-    <div class="micro" style="margin-top:30px">НЕ IDE. ОДНА МІКРОСПРАВА.</div>
-    <h1><span class="highlight">90 секунд</span><br>і готово.</h1>
-    <p class="muted" style="margin-top:0">Свіжий контекст замість меню, файлів і п'яти вкладок.</p>
-    <div class="progress" aria-label="Один крок із трьох"><i></i><i></i><i></i></div>
-    <div class="card task">
-      <div class="task-head"><span class="chip ts">TS</span><span class="muted small">gotable / feat/luna</span><span class="grow"></span><span class="time">~90 с</span></div>
-      <strong>Прибрати помилку типів у <span class="highlight">calculateLoss()</span></strong>
-      <p class="muted small" style="margin:0">Поле <code>best?: number | null</code>. Ти вже був на цьому місці. Одне виправлення, один diff.</p>
-      <div class="state-line"><span class="dot"></span><span id="home-status">Останній контекст збережено</span></div>
-    </div>
-    <div class="hintbox">Система не пропонує випадкову задачу: тільки конкретний незавершений контекст, який можна завершити за короткий сеанс.</div>
-    <div class="spacer"></div>
-    <div class="actions">
-      <button class="big primary" id="resume">▶ Продовжити правку</button>
-      <button class="big secondary" id="postpone">◷ Відкласти</button>
-      <p class="fine">Прототип: справжній сервер і Git не змінюються.</p>
-    </div>
-  </section>
-  <section class="screen" id="screen-editor" aria-label="Редагування TypeScript">
-    <div class="editor-top">
-      <button class="tiny-nav" id="editor-back" aria-label="Назад до мікросесії">‹</button>
-      <span class="editor-title">calculateLoss() <span class="chip ts">TS</span></span>
-      <button class="tiny-nav" id="to-review" aria-label="Переглянути зміну">✓</button>
-    </div>
-    <p class="editor-sub"><strong>luna-review.ts</strong> · рядок 123 · <span id="diagnostic-count">1 TS-помилка</span></p>
-    <div class="codebox"><pre aria-label="TypeScript код"><code id="ts-code"></code></pre></div>
-    <p class="diagnostic" id="ts-diagnostic" role="status">TS18049: <code>s.best</code> може бути null або undefined.</p>
-    <div class="spacer"></div>
-    <div class="edit-bottom" id="edit-bottom">
-      <div class="wheel-copy"><strong>◎ Утримай → веди</strong>
-        4 великі сектори. Один жест замість серії точних тапів.<br>
-        <span class="muted small">Звичайний тап відкриває список.</span>
-      </div>
-      <button class="wheel-button" id="gesture-pad" aria-label="Жестове колесо TypeScript. Утримати й провести або натиснути для меню">◎</button>
-    </div>
-    <button class="big secondary" id="pause-edit" style="margin-top:8px">◷ Пауза · чернетка локально</button>
-  </section>
-  <section class="screen" id="screen-review" aria-label="Перевірка однієї зміни">
-    <div class="editor-top"><button class="tiny-nav" id="review-back" aria-label="Повернутися до редактора">‹</button>
-      <span class="editor-title">Одна зміна</span><span class="chip ts">TS</span></div>
-    <h1>Перевір.<br><span class="highlight">Закрий сесію.</span></h1>
-    <div class="overview">
-      <div class="state-line" style="margin-top:0"><span class="chip ts">TS</span> luna-review.ts · <span id="change-count">0 змін</span></div>
-      <div class="change del"><b>−</b><span id="old-line">return s.best - s.current;</span></div>
-      <div class="change add"><b>+</b><span id="new-line">Поки без змін</span></div>
-    </div>
-    <div class="foot-status"><span class="dot"></span> <span id="review-status">Чернетка локально · VPS без змін</span></div>
-    <div class="hintbox">У фінальному продукті запис на VPS порівнює версію файла і повертає конфлікт без втрати локальної копії. У цьому демо запису немає.</div>
-    <div class="spacer"></div>
-    <div class="actions">
-      <button class="big primary" id="server-save">↑ Зберегти на VPS <span style="font-size:.7rem">(демо)</span></button>
-      <button class="big secondary" id="review-postpone">◷ Відкласти без втрати</button>
-    </div>
-  </section>
+<header class="mast"><span class="logo" aria-hidden="true">///</span>
+  <span class="brand">PULSE <span>CODE</span></span><span class="flex"></span>
+  <span class="pill">TS · UX LAB</span></header>
+<section class="screen active" id="screen-home" aria-label="Вхід до роботи">
+  <div class="micro" style="margin-top:20px">НЕ ПОТРІБНО ВИГАДУВАТИ МІКРОЗАДАЧУ</div>
+  <h1>Зайшов.<br><span class="accent">Потицяв код.</span><br>Повернешся потім.</h1>
+  <p class="muted small" style="line-height:1.4;margin:0">Коротка сесія це спосіб входу, а не обіцянка завершити задачу за хвилину.</p>
+  <div class="card">
+    <div class="card-title"><span class="tspill">TS</span><span class="codeword">gotable / luna-review.ts</span></div>
+    <p style="font-size:1.12rem;font-weight:750">Продовжити з місця, де був.</p>
+    <div class="state" id="home-status">Локальний контекст, сервер без змін</div>
+  </div>
+  <div class="grow"></div>
+  <div class="stack">
+    <button class="big main" id="resume">▶ Продовжити контекст</button>
+    <button class="choose" id="open-file"><span class="symbol">⌕</span><span>Відкрити інший фрагмент<br><small class="muted">Вибір, не призначена задача</small></span></button>
+    <button class="choose" id="new-scratch"><span class="symbol">＋</span><span>Чистий експеримент<br><small class="muted">Структура з нуля</small></span></button>
+  </div>
+  <p class="note">Це UX-прототип: демофайл, локальні чернетки та повне розділення «ввів» і «записав на VPS».</p>
+</section>
+<section class="screen" id="screen-editor" aria-label="TypeScript конструктор">
+  <div class="topbar"><button class="iconbtn" id="editor-back" aria-label="Назад">‹</button>
+    <span class="filelabel" id="filelabel">luna-review.ts</span>
+    <button class="iconbtn" id="to-review" aria-label="Відкрити diff">≡</button></div>
+  <div class="subline">TypeScript · <span id="edit-state">Локальна чернетка</span> · <span id="step-count">0 вставок</span></div>
+  <div class="codebox"><pre id="ts-code" aria-label="Чернетка TypeScript"></pre></div>
+  <div class="compose">
+    <div class="compose-title">КОНСТРУКТОР · СКЛАДАЙ ЧАСТИНАМИ</div>
+    <div class="chips" id="compose-chips"></div>
+  </div>
+  <div class="thumbbar" id="thumbbar">
+    <div class="thumbtext"><b id="wheel-prompt">Обери розділ</b>
+      <span id="wheel-help">Тримай → проведи → відпусти. Другий рівень веде в таблицю.</span></div>
+    <button class="thumbbutton" id="gesture-pad" aria-label="Дворівневе радіальне меню TypeScript. Натисни для доступного списку">◎</button>
+  </div>
+  <div class="edit-foot">
+    <button id="nav-back">‹ Рівень назад</button>
+    <button id="undo-edit">↶ Undo</button>
+    <button id="edit-as-text">⌨ Текстом</button>
+    <button class="primary" id="review-edit">Diff ›</button>
+  </div>
+</section>
+<section class="screen" id="screen-review" aria-label="Перевірка чернетки">
+  <div class="topbar"><button class="iconbtn" id="review-back" aria-label="Повернутися до редактора">‹</button>
+    <span class="filelabel">Перегляд чернетки</span><span class="pill">LOCAL</span></div>
+  <h1>Не фініш.<br><span class="accent">Просто checkpoint.</span></h1>
+  <p class="muted small">Можна продовжити роботу будь-коли. Diff показує лише зміни цієї демоверсії.</p>
+  <div class="diff" id="diff" aria-label="Зміни TypeScript"></div>
+  <div class="state" id="review-state">VPS без змін · локальна чернетка</div>
+  <div class="grow"></div>
+  <div class="stack">
+    <button class="big main" id="server-save">↑ Запис на VPS (демо)</button>
+    <button class="big" id="review-postpone">◷ Залишити чернетку й вийти</button>
+  </div>
+</section>
 </main>
-<div id="wheel" aria-hidden="true">
-  <svg viewBox="0 0 248 248" role="presentation" id="wheel-svg"></svg>
-  <span class="wheel-word l0">Rename</span><span class="wheel-word l1">Fix</span>
-  <span class="wheel-word l2">Перейти</span><span class="wheel-word l3">Імпорт</span>
-  <div class="wheel-center" id="wheel-center">веди<br>й відпусти</div>
+<div id="radial" aria-hidden="true">
+  <svg viewBox="0 0 248 248" id="radial-svg"></svg>
+  <div class="wheel-label" data-i="0"></div><div class="wheel-label" data-i="1"></div>
+  <div class="wheel-label" data-i="2"></div><div class="wheel-label" data-i="3"></div>
+  <div class="wheel-center"><b id="radial-depth">1 / 2</b><span id="radial-center">проведи до сектора</span></div>
 </div>
-<div class="sheet-back" id="sheet-back" role="presentation">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet">
-    <div class="sheet-grip"></div><button type="button" class="close" id="sheet-close" aria-label="Закрити панель">✕ Закрити</button>
-    <h2 id="sheet-title">Дії з TypeScript</h2>
-    <div id="sheet-content"></div>
+<div class="overlay" id="sheet-overlay" role="presentation">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-head"><h2 id="sheet-title">Оберіть рівень</h2><button id="sheet-close" class="smallbtn" aria-label="Закрити">✕</button></div>
+    <div id="sheet-options"></div>
   </div>
 </div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="pulse-code-demo.js" defer></script>
+<section class="grid-overlay" id="grid-overlay" role="dialog" aria-modal="true" aria-label="Повноекранна таблиця TypeScript">
+ <div class="grid-inner">
+  <div class="grid-top">
+    <div class="grid-topline"><button id="grid-back" aria-label="Назад">‹</button>
+      <strong id="grid-title">Вибери фрагмент</strong><button id="grid-close" aria-label="Закрити таблицю">✕</button></div>
+    <div class="crumbs" id="grid-crumbs">Структура / Умови</div>
+    <input id="grid-search" type="search" aria-label="Шукати в таблиці" placeholder="⌕ Шукати конструкцію, символ, оператор…" autocomplete="off">
+    <div class="grid-help" id="grid-help">Великі картки замість клавіатурного хаосу.</div>
+  </div>
+  <div class="tiles" id="grid-tiles"></div>
+ </div>
+ <div class="grid-footer"><div class="footer-inner">
+   <div class="preview" id="grid-preview" aria-live="polite">Обери картку для перегляду.</div>
+   <button id="grid-apply" disabled>Додати до чернетки</button>
+ </div></div>
+</section>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="pulse-code-demo.js?v=grammar3" defer></script>
 </body>
 </html>
