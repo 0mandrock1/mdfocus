@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#190719">
 <title>PULSE CODE · 90 секунд на TypeScript · інтерактивний UX-прототип</title>
 <meta name="description" content="PULSE CODE: концепт мобільного TypeScript-редактора для коротких сесій. Велика зона дії, жестове колесо, безпечний diff. Інтерактивний прототип, без запису на VPS.">
 <meta property="og:type" content="website">
@@ -26,6 +25,7 @@
   button,input{font:inherit}
   button{color:inherit;cursor:pointer;touch-action:manipulation}
   button:focus-visible,input:focus-visible{outline:3px solid var(--page-accent);outline-offset:3px}
+  canvas[data-mandrock0-ambient]{z-index:0!important;opacity:.08!important;pointer-events:none!important}
   .app{position:relative;z-index:1;width:100%;max-width:480px;min-height:100dvh;margin:auto;
     display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 9px) 14px calc(env(safe-area-inset-bottom) + 14px)}
   .mast{display:flex;align-items:center;gap:10px;min-height:50px}
@@ -73,7 +73,7 @@
   .editor-sub strong{color:var(--accent-lime)}
   .codebox{min-height:230px;flex:1;max-height:54dvh;overflow:auto;background:color-mix(in oklch,var(--background) 87%,var(--card));
     border:1px solid var(--border);border-radius:14px;position:relative;padding:17px 12px}
-  .codebox pre{margin:0;white-space:pre;tab-size:2;font-size:clamp(12px,3.45vw,15px);line-height:1.85;
+  .codebox pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;font-size:clamp(12px,3.45vw,15px);line-height:1.85;
     color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
   .codebox .selected{background:color-mix(in oklch,var(--accent-purple) 24%,transparent);
     border:1px solid var(--accent-purple);border-radius:6px;padding:3px 5px}
@@ -128,8 +128,33 @@
     max-width:min(94vw,440px);border:1px solid var(--page-accent);background:var(--card);padding:13px 15px;border-radius:13px;
     text-align:center;font-size:.86rem;display:none}
   .toast.on{display:block}
-  @media(max-height:670px){.app{padding-top:4px}.task{gap:5px}.task h1{margin-top:5px}
-    .codebox{min-height:155px;max-height:37dvh}.edit-bottom{min-height:120px}}
+  @media(max-height:670px){
+    .app{padding-top:4px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+    #screen-home .micro{margin-top:8px!important}
+    #screen-home h1{font-size:1.9rem;line-height:1.06;margin:9px 0 6px}
+    #screen-home > p.muted,#screen-home .progress,#screen-home .hintbox,#screen-home .fine{display:none}
+    #screen-home .task{gap:5px;margin-top:12px;padding:12px}
+    #screen-home .task strong{font-size:1.17rem;line-height:1.16}
+    #screen-home .task .muted.small{font-size:.72rem;line-height:1.32}
+    #screen-home .state-line{margin-top:4px}
+    #screen-home .actions{padding-top:7px;gap:8px}
+    .big{min-height:55px;font-size:.96rem}
+    .codebox{min-height:130px;max-height:29dvh;padding:10px 9px}
+    .codebox pre{font-size:12px;line-height:1.55}
+    #screen-editor .diagnostic{font-size:.73rem;margin:6px 2px}
+    #screen-editor > .spacer{min-height:0}
+    .edit-bottom{min-height:95px;padding:3px 0 0}
+    .wheel-copy{font-size:.7rem;line-height:1.36}
+    .wheel-copy strong{font-size:.85rem}
+    .wheel-copy .muted{display:none}
+    #pause-edit{display:none}
+    #screen-review h1{font-size:1.9rem;margin:4px 0}
+    #screen-review .overview{margin-top:6px;padding:9px}
+    #screen-review .change{font-size:.7rem;padding:6px;margin:4px 0}
+    #screen-review .foot-status{margin-top:5px;padding:8px;font-size:.74rem}
+    #screen-review .hintbox{display:none}
+    #screen-review .actions{gap:8px;padding-top:5px}
+  }
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -169,7 +194,7 @@
     <p class="diagnostic" id="ts-diagnostic" role="status">TS18049: <code>s.best</code> може бути null або undefined.</p>
     <div class="spacer"></div>
     <div class="edit-bottom" id="edit-bottom">
-      <div class="wheel-copy"><strong>Тримай → веди → відпусти</strong>
+      <div class="wheel-copy"><strong>◎ Утримай → веди</strong>
         4 великі сектори. Один жест замість серії точних тапів.<br>
         <span class="muted small">Звичайний тап відкриває список.</span>
       </div>
